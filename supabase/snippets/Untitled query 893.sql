@@ -1,0 +1,1 @@
+SELECT * FROM dances WHERE swing_16 = 'checked';
