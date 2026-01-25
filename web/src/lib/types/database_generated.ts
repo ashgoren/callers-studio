@@ -1,4 +1,4 @@
-// generated wtih supabase gen types typescript --local --schema > database_generated.ts
+// generated wtih supabase gen types typescript --local > database_generated.ts
 
 export type Json =
   | string
@@ -46,7 +46,7 @@ export type Database = {
           notes: string | null
           place_in_program: string | null
           swing_16: boolean | null
-          title: string | null
+          title: string
           url: string | null
           video: string | null
         }
@@ -59,7 +59,7 @@ export type Database = {
           notes?: string | null
           place_in_program?: string | null
           swing_16?: boolean | null
-          title?: string | null
+          title: string
           url?: string | null
           video?: string | null
         }
@@ -72,7 +72,7 @@ export type Database = {
           notes?: string | null
           place_in_program?: string | null
           swing_16?: boolean | null
-          title?: string | null
+          title?: string
           url?: string | null
           video?: string | null
         }

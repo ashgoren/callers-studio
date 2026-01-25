@@ -1,3 +1,4 @@
+import { Box } from '@mui/material';
 import { useTable } from '@/hooks/useTable';
 import { DataTable } from '@/components/DataTable';
 import { columns, initialState } from './columns';
@@ -17,9 +18,9 @@ export const Dances = () => {
   }
 
   return (
-    <>
+    <Box sx={{ width: '100%', maxWidth: '100vw', overflowX: 'hidden' }}>
       <h1>Dances</h1>
       <DataTable table={table} />
-    </>
+    </Box>
   );
 };

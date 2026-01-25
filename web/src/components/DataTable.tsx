@@ -1,25 +1,83 @@
 import { useState } from 'react';
-import { flexRender, type Table as ReactTable } from '@tanstack/react-table';
+import { flexRender, type Table as ReactTable, type Column } from '@tanstack/react-table';
 import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel, TextField, IconButton, Box } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
 
 export const DataTable = <TData,>({ table }: { table: ReactTable<TData> }) => {
   const [filterOpen, setFilterOpen] = useState<Record<string, boolean>>({});
+  const [hoveredRow, setHoveredRow] = useState<string | null>(null);
 
   const toggleFilter = (column: { id: string, setFilterValue: (value: any) => void }) => {
     column.setFilterValue(undefined);
     setFilterOpen(prev => ({ ...prev, [column.id]: !prev[column.id] }));
   };
 
+  const getPinnedStyles = <TData,>({ column, isLastPinned, isHovered, isHeader }: {
+    isHovered: boolean;
+    isHeader: boolean;
+    column: Column<TData, unknown>;
+    isLastPinned: boolean;
+  }) => {
+    const isPinned = column.getIsPinned();
+    if (!isPinned) return {};
+
+    return {
+      position: 'sticky',
+      left: column.getStart('left'),
+      width: column.getSize(),
+      zIndex: 1,
+      backgroundColor: isHeader ? 'grey.50' : isHovered ? 'grey.100' : 'background.paper',
+      ...(isLastPinned && {
+        borderRight: 'none',
+        '&::after': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          bottom: 0,
+          width: '4px',
+          background: 'linear-gradient(to right, rgba(0,0,0,0.15), transparent)',
+          pointerEvents: 'none',
+        },
+      }),
+    };
+  };
+
   return (
     <TableContainer component={Paper}>
-      <Table>
+      <Table size='small' sx={{ tableLayout: 'fixed', minWidth: table.getTotalSize() }}>
+        <colgroup>
+          {table.getAllLeafColumns().map(column => (
+            <col key={column.id} style={{ width: column.getSize() }} />
+          ))}
+        </colgroup>
+
         <TableHead>
           {table.getHeaderGroups().map(headerGroup => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map(header => (
-                <TableCell key={header.id}>
+                <TableCell
+                  key={header.id}
+                  sx={{
+                    width: header.getSize(),
+                    position: 'relative',
+                    borderRight: '1px solid',
+                    borderColor: 'divider',
+                    bgcolor: 'grey.50',
+                    '&:last-child': { borderRight: 'none' },
+                    py: 0.75,
+                    px: 1.5,
+                    fontSize: '0.8125rem',
+                    fontWeight: 600,
+                    ...getPinnedStyles({
+                      column: header.column,
+                      isLastPinned: header.column.getIsLastColumn('left'),
+                      isHovered: false,
+                      isHeader: true
+                    })
+                  }}
+                >
 
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -41,6 +99,7 @@ export const DataTable = <TData,>({ table }: { table: ReactTable<TData> }) => {
                         size='small'
                         onClick={() => toggleFilter(header.column)}
                         color={filterOpen[header.column.id] ? 'secondary' : 'default'}
+                        sx={{ padding: '2px' }}
                       >
                         <SearchIcon fontSize='small' />
                       </IconButton>
@@ -57,17 +116,39 @@ export const DataTable = <TData,>({ table }: { table: ReactTable<TData> }) => {
                       sx={{ mt: 1 }}
                       slotProps={{
                         input: {
-                          endAdornment: (<IconButton
-                            size='small'
-                            onClick={() => toggleFilter(header.column)}
-                          >
-                            <ClearIcon fontSize='small' />
-                          </IconButton>
+                          endAdornment: (
+                            <IconButton
+                              size='small'
+                              onClick={() => toggleFilter(header.column)}
+                              sx={{ padding: '2px' }}
+                            >
+                              <ClearIcon fontSize='small' />
+                            </IconButton>
                           )
                         }
                       }}
                     />
                   )}
+
+                {header.column.getCanResize() && (
+                  <Box
+                    onMouseDown={header.getResizeHandler()}
+                    onTouchStart={header.getResizeHandler()}
+                    sx={{
+                      position: 'absolute',
+                      right: 0,
+                      top: 0,
+                      height: '100%',
+                      width: '5px',
+                      cursor: 'col-resize',
+                      userSelect: 'none',
+                      touchAction: 'none',
+                      '&:hover': {
+                        backgroundColor: 'primary.main',
+                      }
+                    }}
+                  />
+                )}
 
                 </TableCell>
               ))}
@@ -76,9 +157,39 @@ export const DataTable = <TData,>({ table }: { table: ReactTable<TData> }) => {
         </TableHead>
         <TableBody>
           {table.getRowModel().rows.map(row => (
-            <TableRow key={row.id}>
+            <TableRow
+              key={row.id}
+              onMouseEnter={() => setHoveredRow(row.id)}
+              onMouseLeave={() => setHoveredRow(null)}
+              sx={{
+                backgroundColor: 'background.paper',
+                // '&:hover': { backgroundColor: 'action.hover' },
+                // willChange: 'background-color'
+              }}
+            >
               {row.getVisibleCells().map(cell => (
-                <TableCell key={cell.id}>
+                <TableCell
+                  key={cell.id}
+                  sx={{
+                    width: cell.column.getSize(),
+                    borderRight: '1px solid',
+                    borderColor: 'divider',
+                    bgcolor: hoveredRow === row.id ? 'action.hover' : 'background.paper',
+                    '&:last-child': { borderRight: 'none' },
+                    py: 0.5,
+                    px: 1.5,
+                    fontSize: '0.8125rem',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    ...getPinnedStyles({
+                      column: cell.column,
+                      isLastPinned: cell.column.getIsLastColumn('left'),
+                      isHovered: hoveredRow === row.id,
+                      isHeader: false,
+                    })
+                  }}
+                >
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </TableCell>
               ))}

@@ -14,5 +14,7 @@ export const useTable = <TData>(
     getFilteredRowModel: getFilteredRowModel(),
     initialState,
     enableSortingRemoval: false,
+    enableColumnResizing: true,
+    columnResizeMode: 'onChange'
   });
 };

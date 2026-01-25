@@ -1,3 +1,6 @@
+// Relies on generated types from database_generated.ts
+// Regenerate with: supabase gen types typescript --local > database_generated.ts
+
 import type { Database } from './database_generated';
 
 type Tables = Database['public']['Tables'];
