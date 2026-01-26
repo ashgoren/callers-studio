@@ -1,10 +1,17 @@
-import { Box } from '@mui/material';
+import { useEffect } from 'react';
 import { useTable } from '@/hooks/useTable';
 import { DataTable } from '@/components/DataTable';
 import { columns, initialState } from './columns';
 import { useDances } from '@/hooks/useDances';
+import { useTitle } from '@/contexts/TitleContext';
 
 export const Dances = () => {
+  const { setTitle } = useTitle();
+
+  useEffect(() => {
+    setTitle('Dances');
+  }, [setTitle]);
+
   const { data, error, isLoading } = useDances();
 
   const table = useTable(data, columns, initialState);
@@ -18,9 +25,6 @@ export const Dances = () => {
   }
 
   return (
-    <Box sx={{ width: '100%', maxWidth: '100vw', overflowX: 'hidden' }}>
-      <h1>Dances</h1>
-      <DataTable table={table} />
-    </Box>
+    <DataTable table={table} />
   );
 };

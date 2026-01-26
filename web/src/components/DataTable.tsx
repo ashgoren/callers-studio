@@ -27,7 +27,7 @@ export const DataTable = <TData,>({ table }: { table: ReactTable<TData> }) => {
       left: column.getStart('left'),
       width: column.getSize(),
       zIndex: 1,
-      backgroundColor: isHeader ? 'grey.50' : isHovered ? 'grey.100' : 'background.paper',
+      backgroundColor: isHeader ? 'action.selected' : isHovered ? 'action.hover' : 'background.paper',
       ...(isLastPinned && {
         borderRight: 'none',
         '&::after': {
@@ -64,7 +64,7 @@ export const DataTable = <TData,>({ table }: { table: ReactTable<TData> }) => {
                     position: 'relative',
                     borderRight: '1px solid',
                     borderColor: 'divider',
-                    bgcolor: 'grey.50',
+                    bgcolor: 'action.selected',
                     '&:last-child': { borderRight: 'none' },
                     py: 0.75,
                     px: 1.5,
