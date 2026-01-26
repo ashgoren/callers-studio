@@ -7,6 +7,6 @@ export const getPrograms = async () => {
     throw new Error(error.message);
   }
 
-  console.log('Fetched programs:', data);
+  // console.log('Fetched programs:', data);
   return data;
 };

@@ -7,6 +7,6 @@ export const getDancesPrograms = async () => {
     throw new Error(error.message);
   }
 
-  console.log('Fetched dances_programs:', data);
+  // console.log('Fetched dances_programs:', data);
   return data;
 };
