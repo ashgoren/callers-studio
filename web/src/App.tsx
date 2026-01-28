@@ -6,7 +6,6 @@ import { Layout } from './components/Layout';
 import { Dances } from './components/Dances';
 import { Programs } from './components/Programs';
 import { Home } from './components/Home';
-// import { DancesPrograms } from './components/DancesPrograms';
 
 function App() {
   return (
@@ -18,7 +17,6 @@ function App() {
               <Route path='/' element={<Home />} />
               <Route path='/dances' element={<Dances />} />
               <Route path='/programs' element={<Programs />} />
-              {/* <Route path='/dance-programs' element={<DancesPrograms />} /> */}
             </Routes>
           </BrowserRouter>
         </Layout>

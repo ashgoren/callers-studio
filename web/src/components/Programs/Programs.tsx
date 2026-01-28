@@ -16,7 +16,7 @@ export const Programs = () => {
 
   if (isLoading) return <Spinner />;
   if (error) return <ErrorMessage error={error} />;
-
+  
   return (
     <>
       <QueryBuilderComponent

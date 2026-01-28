@@ -1,5 +1,3 @@
-// generated wtih supabase gen types typescript --local > database_generated.ts
-
 export type Json =
   | string
   | number
@@ -78,7 +76,28 @@ export type Database = {
         }
         Relationships: []
       }
-      dancesPrograms: {
+      programs: {
+        Row: {
+          created_at: string
+          date: string | null
+          id: number
+          location: string | null
+        }
+        Insert: {
+          created_at?: string
+          date?: string | null
+          id?: number
+          location?: string | null
+        }
+        Update: {
+          created_at?: string
+          date?: string | null
+          id?: number
+          location?: string | null
+        }
+        Relationships: []
+      }
+      programs_dances: {
         Row: {
           created_at: string
           dance_id: number
@@ -116,27 +135,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      programs: {
-        Row: {
-          created_at: string
-          date: string | null
-          id: number
-          location: string | null
-        }
-        Insert: {
-          created_at?: string
-          date?: string | null
-          id?: number
-          location?: string | null
-        }
-        Update: {
-          created_at?: string
-          date?: string | null
-          id?: number
-          location?: string | null
-        }
-        Relationships: []
       }
     }
     Views: {
