@@ -1,3 +1,4 @@
+import { Link as RouterLink } from 'react-router'
 import { Typography, Link, List, ListItem } from '@mui/material'
 
 export const Home = () => (
@@ -7,10 +8,10 @@ export const Home = () => (
     </Typography>
     <List>
       <ListItem>
-        <Link href="/dances">Dances</Link>
+        <Link component={RouterLink} to="/dances">Dances</Link>
       </ListItem>
       <ListItem>
-        <Link href="/programs">Programs</Link>
+        <Link component={RouterLink} to="/programs">Programs</Link>
       </ListItem>
     </List>
   </>

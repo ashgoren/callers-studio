@@ -9,19 +9,19 @@ import { Home } from './components/Home';
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TitleProvider>
-        <Layout>
-          <BrowserRouter>
+    <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <TitleProvider>
+          <Layout>
             <Routes>
               <Route path='/' element={<Home />} />
               <Route path='/dances' element={<Dances />} />
               <Route path='/programs' element={<Programs />} />
             </Routes>
-          </BrowserRouter>
-        </Layout>
-      </TitleProvider>
-    </QueryClientProvider>
+          </Layout>
+        </TitleProvider>
+      </QueryClientProvider>
+    </BrowserRouter>
   )
 }
 
