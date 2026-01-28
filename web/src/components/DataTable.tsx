@@ -1,17 +1,9 @@
 import { useState } from 'react';
 import { flexRender, type Table as ReactTable, type Column } from '@tanstack/react-table';
-import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel, TextField, IconButton, Box } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-import ClearIcon from '@mui/icons-material/Clear';
+import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel, Box } from '@mui/material';
 
 export const DataTable = <TData,>({ table }: { table: ReactTable<TData> }) => {
-  const [filterOpen, setFilterOpen] = useState<Record<string, boolean>>({});
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
-
-  const toggleFilter = (column: { id: string, setFilterValue: (value: any) => void }) => {
-    column.setFilterValue(undefined);
-    setFilterOpen(prev => ({ ...prev, [column.id]: !prev[column.id] }));
-  };
 
   const getPinnedStyles = <TData,>({ column, isLastPinned, isHovered, isHeader }: {
     isHovered: boolean;
@@ -93,42 +85,7 @@ export const DataTable = <TData,>({ table }: { table: ReactTable<TData> }) => {
                         flexRender(header.column.columnDef.header, header.getContext())
                       )}
                     </Box>
-
-                    {header.column.getCanFilter() && (
-                      <IconButton 
-                        size='small'
-                        onClick={() => toggleFilter(header.column)}
-                        color={filterOpen[header.column.id] ? 'secondary' : 'default'}
-                        sx={{ padding: '2px' }}
-                      >
-                        <SearchIcon fontSize='small' />
-                      </IconButton>
-                    )}
                   </Box>
-
-                  {header.column.getCanFilter() && filterOpen[header.column.id] && (
-                    <TextField
-                      size='small'
-                      fullWidth
-                      autoFocus
-                      onChange={e => header.column.setFilterValue(e.target.value)}
-                      placeholder='Filter...'
-                      sx={{ mt: 1 }}
-                      slotProps={{
-                        input: {
-                          endAdornment: (
-                            <IconButton
-                              size='small'
-                              onClick={() => toggleFilter(header.column)}
-                              sx={{ padding: '2px' }}
-                            >
-                              <ClearIcon fontSize='small' />
-                            </IconButton>
-                          )
-                        }
-                      }}
-                    />
-                  )}
 
                 {header.column.getCanResize() && (
                   <Box
