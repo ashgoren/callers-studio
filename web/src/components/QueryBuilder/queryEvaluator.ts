@@ -1,12 +1,49 @@
-import type { RuleGroupType, RuleType } from 'react-querybuilder';
+import { formatQuery, type RuleGroupType, type RuleType } from 'react-querybuilder';
+import { fields } from '../Programs/columns';
 
 const evaluateRule = (row: any, rule: RuleType): boolean => {
-  const value = row[rule.field];
-  const filterValue = rule.value;
+  const { field, operator, value: filterValue } = rule;
+  const value = row[field];
+
+  const compareDates = (value: string, filterValue: string, operator: string): boolean => {
+    const rowDate = new Date(value).getTime();
+    const singleDate = new Date(filterValue.split(',')[0].trim()).getTime();
+
+    try {
+      switch (operator) {
+        case '=': return rowDate === singleDate;
+        case '!=': return rowDate !== singleDate;
+        case '>': return rowDate > singleDate;
+        case '>=': return rowDate >= singleDate;
+        case '<': return rowDate < singleDate;
+        case '<=': return rowDate <= singleDate;
+        case 'between': {
+          const parts = filterValue.split(',');
+          const start = new Date(parts[0].trim()).getTime();
+          const end = parts[1] ? new Date(parts[1].trim()).getTime() : start;
+          return rowDate >= start && rowDate <= end;
+        }
+        case 'notBetween': {
+          const parts = filterValue.split(',');
+          const start = new Date(parts[0].trim()).getTime();
+          const end = parts[1] ? new Date(parts[1].trim()).getTime() : start;
+          return rowDate < start || rowDate > end;
+        }
+        default: return false;
+      }
+    } catch (error) {
+      console.error('Error comparing dates:', error, { rowDate, singleDate, filterValue, operator });
+      return false;
+    }
+  };
+
+  if (isDateField(field) && filterValue) {
+    return compareDates(value, filterValue, operator);
+  }
 
   if (
     (filterValue === '' || filterValue == null) &&
-    !['null', 'notNull'].includes(rule.operator)
+    !['null', 'notNull'].includes(operator)
   ) {
     return true;
   }
@@ -14,7 +51,7 @@ const evaluateRule = (row: any, rule: RuleType): boolean => {
   const downcasedValue = typeof value === 'string' ? value.toLowerCase() : value;
   const downcasedFilterValue = typeof filterValue === 'string' ? filterValue.toLowerCase() : filterValue;
 
-  switch (rule.operator) {
+  switch (operator) {
     case '=':
       if (filterValue === 'true') return value === true || String(value).toLowerCase() === 'true';
       if (filterValue === 'falsey') return !value || value === '' || String(value).toLowerCase() === 'false';
@@ -56,12 +93,20 @@ const evaluateRule = (row: any, rule: RuleType): boolean => {
 };
 
 export const evaluateQuery = (row: any, query: RuleGroupType): boolean => {
-  const { combinator, rules } = query;
-  if (!rules.length) return true;
+  try {
+    const { combinator, rules } = query;
+    if (!rules.length) return true;
 
-  const results = rules.map((rule) =>
-    'combinator' in rule ? evaluateQuery(row, rule) : evaluateRule(row, rule)
-  );
+    const results = rules.map((rule) =>
+      'combinator' in rule ? evaluateQuery(row, rule) : evaluateRule(row, rule)
+    );
 
-  return combinator === 'and' ? results.every(Boolean) : results.some(Boolean);
+    return combinator === 'and' ? results.every(Boolean) : results.some(Boolean);
+  } catch (error) {
+    console.error(`Error evaluating query ${formatQuery(query, 'sql')}:`, error);
+    return true;
+  }
 };
+
+const isDateField = (fieldName: string): boolean =>
+  fields.some(f => f.name === fieldName && f.inputType === 'date');

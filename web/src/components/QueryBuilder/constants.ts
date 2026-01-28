@@ -27,6 +27,10 @@ export const operators = [
 export const operatorPairs: Record<string, string> = {
   '=': '!=',
   '!=': '=',
+  '<': '>=',
+  '<=': '>',
+  '>': '<=',
+  '>=': '<',
   'contains': 'doesNotContain',
   'doesNotContain': 'contains',
   'beginsWith': 'doesNotBeginWith',
