@@ -12,17 +12,18 @@ const DETAIL_COMPONENTS: Record<string, React.ComponentType<{ id: number }>> = {
 
 export const DetailDrawer = () => {
   const { closeDrawer } = useDrawerActions();
-  const { isOpen, model, id } = useDrawerState();
+  const { isOpen, model, id, isEditing } = useDrawerState();
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) closeDrawer();
+      if (e.key === 'Escape' && isOpen && !isEditing) closeDrawer();
     };    
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
-  }, [isOpen, closeDrawer]);
+  }, [isOpen, isEditing, closeDrawer]);
   
   const handleClickAway = (event: MouseEvent | TouchEvent) => {
+    if (isEditing) return; // Don't close if in editing mode
     const target = event.target as HTMLElement;
     if (target.closest('.MuiTable-root') || target.closest('.MuiTableContainer-root')) {
       return; // Don't close if clicking inside the table

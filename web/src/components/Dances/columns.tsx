@@ -37,6 +37,9 @@ export const columns = [
     size: 60,
     minSize: 55,
   }),
+  columnHelper.accessor('url', {
+    header: 'URL'
+  }),
   columnHelper.accessor('choreographer', {
     header: 'Choreographer',
     size: 200,
@@ -96,7 +99,10 @@ export const columns = [
 
 export const initialState = {
   sorting: [{ id: 'id', desc: false }],
-  columnPinning: { left: ['title'] }
+  columnPinning: { left: ['title'] },
+  columnVisibility: {
+    url: false,
+  }
 };
 
 const linkTitle = (info: CellInfo) => {

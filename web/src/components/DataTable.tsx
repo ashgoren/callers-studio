@@ -44,7 +44,7 @@ export const DataTable = <TData,>({ table, onRowClick }: {
     <TableContainer component={Paper} sx={{ boxShadow: 3, borderRadius: 2, mb: 2 }}>
       <Table size='small' sx={{ tableLayout: 'fixed', minWidth: table.getTotalSize() }}>
         <colgroup>
-          {table.getAllLeafColumns().map(column => (
+          {table.getVisibleLeafColumns().map(column => (
             <col key={column.id} style={{ width: column.getSize() }} />
           ))}
         </colgroup>

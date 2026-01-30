@@ -1,7 +1,7 @@
 import { Spinner, ErrorMessage } from '@/components/shared';
 import { useProgram } from '@/hooks/usePrograms';
 import { columns } from '../Programs/columns';
-import { HeadlessDetailTable } from '@/components/HeadlessDetailTable';
+import { DetailPanel } from '@/components/DetailPanel';
 import { dateToLocaleString } from '@/lib/utils';
 
 export const ProgramDetails = ({ id }: { id: number }) => {
@@ -12,7 +12,7 @@ export const ProgramDetails = ({ id }: { id: number }) => {
   if (!program) return <ErrorMessage error={new Error('Program not found')} />;
 
   return (
-    <HeadlessDetailTable
+    <DetailPanel
       data={program}
       columns={columns}
       title={`Program: ${program.date ? dateToLocaleString(new Date(program.date)) : ''}`}

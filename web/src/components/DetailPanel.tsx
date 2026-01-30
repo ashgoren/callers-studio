@@ -5,14 +5,14 @@ import EditIcon from '@mui/icons-material/Edit';
 import { useReactTable, getCoreRowModel, flexRender } from '@tanstack/react-table';
 import { useDrawerActions } from '@/contexts/DrawerContext';
 
-type HeadlessDetailTableProps = {
-  data: any;
+type DetailPanelProps<TData> = {
+  data: TData;
   columns: any[];
   title?: string;
   onEdit?: () => void;
 };
 
-export const HeadlessDetailTable = ({ data, columns, title, onEdit }: HeadlessDetailTableProps) => {
+export const DetailPanel = <TData extends Record<string, any>>({ data, columns, title, onEdit }: DetailPanelProps<TData>) => {
   const { closeDrawer } = useDrawerActions();
 
   const tableData = useMemo(() => [data], [data]); // Wrap data in an array for single row
