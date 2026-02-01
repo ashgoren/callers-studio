@@ -30,6 +30,7 @@ export const Programs = () => {
   return (
     <>
       <QueryBuilderComponent
+        tableName='programs'
         fields={fields}
         defaultQuery={defaultQuery}
         query={query}
