@@ -49,9 +49,8 @@ export const columns: MRT_ColumnDef<Dance>[] = [
     header: 'Notes',
     size: 300,
     minSize: 120,
-    maxSize: 300,
     filterFn: 'includesString',
-    Cell: ({ row }) => row.original.notes ? TooltipCell({ content: row.original.notes }) : null,
+    Cell: ({ row }) => row.original.notes ? <TooltipCell content={row.original.notes} /> : null,
     muiTableBodyCellProps: {
       sx: {
         overflow: 'hidden',
@@ -66,7 +65,7 @@ export const columns: MRT_ColumnDef<Dance>[] = [
     size: 250,
     minSize: 150,
     filterFn: 'includesString',
-    Cell: ({ row }) => row.original.place_in_program ? TooltipCell({ content: row.original.place_in_program }) : null,
+    Cell: ({ row }) => row.original.place_in_program ? <TooltipCell content={row.original.place_in_program} /> : null,
   },
   {
     accessorKey: 'moves',
@@ -74,7 +73,7 @@ export const columns: MRT_ColumnDef<Dance>[] = [
     size: 200,
     minSize: 120,
     filterFn: 'includesString',
-    Cell: ({ row }) => row.original.moves ? TooltipCell({ content: row.original.moves }) : null,
+    Cell: ({ row }) => row.original.moves ? <TooltipCell content={row.original.moves} /> : null,
   },
   {
     accessorKey: 'swing_16',
