@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getDances, getDance, updateDance, createDance } from '@/lib/api/dances'
+import { getDances, getDance, updateDance, createDance, deleteDance } from '@/lib/api/dances'
 import type { Dance, DanceUpdate, DanceInsert } from '@/lib/types/database';
 
 export const useDances = () => {
@@ -34,11 +34,16 @@ export const useUpdateDance = () => {
 export const useCreateDance = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (newDance: DanceInsert) =>
-      createDance(newDance),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dances'] });
-    },
+    mutationFn: (newDance: DanceInsert) => createDance(newDance),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['dances'] })
+  });
+};
+
+export const useDeleteDance = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id }: { id: number }) => deleteDance(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['dances'] })
   });
 };
 

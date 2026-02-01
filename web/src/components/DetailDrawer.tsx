@@ -5,25 +5,25 @@ import { useDrawerActions } from '@/contexts/DrawerContext';
 import { DanceDetails } from './Dances/DanceDetails';
 import { ProgramDetails } from './Programs/ProgramDetails';
 
-const DETAIL_COMPONENTS: Record<string, React.ComponentType<{ id: number }>> = {
+const DETAIL_COMPONENTS: Record<string, React.ComponentType<{ id?: number }>> = {
   dance: DanceDetails,
   program: ProgramDetails,
 };
 
 export const DetailDrawer = () => {
   const { closeDrawer } = useDrawerActions();
-  const { isOpen, model, id, isEditing } = useDrawerState();
+  const { isOpen, model, id, mode } = useDrawerState();
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen && !isEditing) closeDrawer();
+      if (e.key === 'Escape' && isOpen && mode === 'view') closeDrawer();
     };    
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
-  }, [isOpen, isEditing, closeDrawer]);
+  }, [isOpen, mode, closeDrawer]);
 
   const handleClickAway = (event: MouseEvent | TouchEvent) => {
-    if (isEditing) return; // Don't close if in editing mode
+    if (mode !== 'view') return; // Don't close if in edit/create mode
     const target = event.target as HTMLElement;
     if (target.closest('.MuiTable-root') || target.closest('.MuiTableContainer-root')) {
       return; // Don't close if clicking inside the table
@@ -31,7 +31,7 @@ export const DetailDrawer = () => {
     closeDrawer();
   };
 
-  if (!model || !id) return null;
+  if (!model) return null;
 
   const DetailComponent = DETAIL_COMPONENTS[model];
   if (!DetailComponent) return null;
@@ -42,12 +42,10 @@ export const DetailDrawer = () => {
         variant='persistent'
         anchor='right'
         open={isOpen}
-        sx={{
-          '& .MuiDrawer-paper': { width: 400, height: '100vh', overflowY: 'auto'}
-        }}
+        sx={{ '& .MuiDrawer-paper': { width: 400, height: '100vh', overflowY: 'auto'} }}
       >
         <Box sx={{ p: 2 }}>
-          <DetailComponent id={id} />
+          <DetailComponent id={id ?? undefined} />
         </Box>
       </Drawer>
     </ClickAwayListener>

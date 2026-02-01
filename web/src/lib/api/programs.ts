@@ -44,3 +44,13 @@ export const createProgram = async (newProgram: ProgramInsert) => {
   if (error) throw new Error(error.message);
   return data as Program;
 };
+
+export const deleteProgram = async (id: number) => {
+  const { data, error } = await supabase
+    .from('programs')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw new Error(error.message);
+  return data;
+};

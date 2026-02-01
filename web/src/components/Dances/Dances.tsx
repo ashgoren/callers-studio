@@ -24,7 +24,7 @@ export const Dances = () => {
   };
 
   const { data, error, isLoading } = useDances();
-  const { table, query, setQuery } = useTable('dances', data, columns, defaultQuery, onRowClick, options);
+  const { table, query, setQuery } = useTable('dance', data, columns, defaultQuery, onRowClick, options);
 
   const [filterOpen, setFilterOpen] = useState(countActiveRules(query.rules) > 0);
 
@@ -34,7 +34,7 @@ export const Dances = () => {
   return (
     <>
       <TableControls
-        tableName='dances'
+        model='dance'
         query={query}
         setFilterOpen={setFilterOpen}
       />

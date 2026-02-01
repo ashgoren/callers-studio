@@ -10,9 +10,10 @@ type DetailPanelProps<TData> = {
   columns: any[];
   title?: string;
   onEdit?: () => void;
+  onDelete?: () => void;
 };
 
-export const DetailPanel = <TData extends Record<string, any>>({ data, columns, title, onEdit }: DetailPanelProps<TData>) => {
+export const DetailPanel = <TData extends Record<string, any>>({ data, columns, title, onEdit, onDelete }: DetailPanelProps<TData>) => {
   const { closeDrawer } = useDrawerActions();
 
   const tableData = useMemo(() => [data], [data]); // Wrap data in an array for single row
@@ -74,6 +75,23 @@ export const DetailPanel = <TData extends Record<string, any>>({ data, columns, 
           fullWidth
         >
           Edit
+        </Button>
+      )}
+
+      {onDelete && (
+        <Button
+          variant='outlined'
+          color='error'
+          onClick={() => {
+            if (confirm('Are you sure you want to delete this item?')) {
+              onDelete();
+              closeDrawer();
+            }
+          }}
+          fullWidth
+          sx={{ mt: 1 }}
+        >
+          Delete
         </Button>
       )}
     </Box>

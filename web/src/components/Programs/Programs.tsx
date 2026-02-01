@@ -24,7 +24,7 @@ export const Programs = () => {
   };
 
   const { data, error, isLoading } = usePrograms();
-  const { table, query, setQuery } = useTable('programs', data, columns, defaultQuery, onRowClick, options);
+  const { table, query, setQuery } = useTable('program', data, columns, defaultQuery, onRowClick, options);
 
   const [filterOpen, setFilterOpen] = useState(countActiveRules(query.rules) > 0);
 
@@ -34,7 +34,7 @@ export const Programs = () => {
   return (
     <>
       <TableControls
-        tableName='programs'
+        model='program'
         query={query}
         setFilterOpen={setFilterOpen}
       />

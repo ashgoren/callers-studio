@@ -9,7 +9,7 @@ type EditPanelProps<TData> = {
   data: TData;
   columns: any[];
   title?: string;
-  onSave: (updates: Partial<TData>) => Promise<unknown>;
+  onSave: (updates: any) => Promise<unknown>;
   onCancel: () => void;
 };
 

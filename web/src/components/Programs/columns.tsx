@@ -42,6 +42,11 @@ export const columns: MRT_ColumnDef<Program>[] = [
   },
 ];
 
+export const newRecord = {
+  date: null,
+  location: '',
+}
+
 export const options = {
   initialState: {
     sorting: [{ id: 'date', desc: true }],

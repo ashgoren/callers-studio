@@ -2,7 +2,7 @@ import { ExternalLink } from '@/components/shared';
 import { TooltipCell } from '@/components/TooltipCell';
 import { CellLinkedPrograms } from './CellLinkedPrograms';
 import type { MRT_ColumnDef } from 'material-react-table'
-import type { Dance } from '@/lib/types/database';
+import type { Dance, DanceInsert } from '@/lib/types/database';
 import '@tanstack/react-table';
 
 export const fields = [
@@ -101,6 +101,18 @@ export const columns: MRT_ColumnDef<Dance>[] = [
     minSize: 100,
   },
 ]
+
+export const newRecord: DanceInsert = {
+  title: '',
+  choreographer: '',
+  difficulty: null,
+  notes: '',
+  place_in_program: '',
+  moves: '',
+  swing_16: null,
+  url: '',
+  video: '',
+};
 
 export const options = {
   initialState: {

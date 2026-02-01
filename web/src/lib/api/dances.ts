@@ -43,3 +43,13 @@ export const createDance = async (newDance: DanceInsert) => {
   if (error) throw new Error(error.message);
   return data as Dance;
 };
+
+export const deleteDance = async (id: number) => {
+  const { data, error } = await supabase
+    .from('dances')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw new Error(error.message);
+  return data;
+};
