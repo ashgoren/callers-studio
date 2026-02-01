@@ -21,7 +21,7 @@ export const DetailDrawer = () => {
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isOpen, isEditing, closeDrawer]);
-  
+
   const handleClickAway = (event: MouseEvent | TouchEvent) => {
     if (isEditing) return; // Don't close if in editing mode
     const target = event.target as HTMLElement;
