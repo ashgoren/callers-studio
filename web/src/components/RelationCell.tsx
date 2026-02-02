@@ -1,26 +1,27 @@
 import { Box } from '@mui/material';
 import { useDrawerActions } from '@/contexts/DrawerContext';
+import type { Model } from '@/lib/types/database';
 
-import type { ProgramRow } from '@/lib/types/database';
+export const RelationCell = <TRelation,>({ items, model, getId, getLabel }: {
+  items: TRelation[] | null | undefined;
+  model: Model;
+  getId: (item: TRelation) => number;
+  getLabel: (item: TRelation) => string;
+}) => {
+  const { openDrawer } = useDrawerActions();
 
-type DanceProgramLink = {
-  program: ProgramRow;
-}
-
-export const CellLinkedPrograms = ({ programsDances }: { programsDances: DanceProgramLink[] }) => {
-  const { openDrawer } = useDrawerActions(); 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.5 }}>
-      {programsDances.map((pd) => (
+      {items?.map((item) => (
         <Box
-          key={pd.program.id}
+          key={getId(item)}
           onClick={(e) => {
             e.stopPropagation();
-            openDrawer('program', pd.program.id);
+            openDrawer(model, getId(item));
           }}
           sx={{ cursor: 'pointer', textDecoration: 'underline', color: 'secondary.main', '&:hover': { color: 'secondary.dark' } }}
         >
-          {pd.program.date} - {pd.program.location}
+          {getLabel(item)}
         </Box>
       ))}
     </Box>

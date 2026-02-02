@@ -5,10 +5,11 @@ import SaveIcon from '@mui/icons-material/Save';
 import { useReactTable, getCoreRowModel } from '@tanstack/react-table';
 import { useDrawerActions } from '@/contexts/DrawerContext';
 import type { ColumnDef } from '@tanstack/react-table';
+import type { MRT_RowData, MRT_ColumnDef } from 'material-react-table';
 
-type EditPanelProps<TData> = {
-  data: TData;
-  columns: ColumnDef<TData>[];
+type EditPanelProps<TData extends MRT_RowData> = {
+  data: Partial<TData>;
+  columns: MRT_ColumnDef<TData>[];
   title?: string;
   onSave: (updates: any) => Promise<unknown>;
   onCancel: () => void;
@@ -21,9 +22,9 @@ export const EditPanel = <TData extends Record<string, any>>({ data, columns, ti
 
   const tableData = useMemo(() => [data], [data]);
 
-  const table = useReactTable({
+  const table = useReactTable<Partial<TData>>({
     data: tableData,
-    columns,
+    columns: columns as ColumnDef<Partial<TData>>[],
     getCoreRowModel: getCoreRowModel(),
   });
   const row = table.getRowModel().rows[0];

@@ -1,6 +1,6 @@
 import { ExternalLink } from '@/components/shared';
 import { TooltipCell } from '@/components/TooltipCell';
-import { CellLinkedPrograms } from './CellLinkedPrograms';
+import { RelationCell } from '@/components/RelationCell';
 import type { MRT_ColumnDef } from 'material-react-table'
 import type { Dance, DanceInsert } from '@/lib/types/database';
 import '@tanstack/react-table';
@@ -101,11 +101,16 @@ export const columns: MRT_ColumnDef<Dance>[] = [
   {
     id: 'programs',
     header: '🔗 Programs',
-    Cell: ({ row }) => <CellLinkedPrograms programsDances={row.original.programs_dances} />,
     enableColumnFilter: false,
     size: 300,
     minSize: 100,
-  },
+    Cell: ({ row }) => <RelationCell
+      items={row.original.programs_dances}
+      model='program'
+      getId={(joinRow) => joinRow.program.id}
+      getLabel={(joinRow) => `${joinRow.program.date} - ${joinRow.program.location}`}
+    />
+  }
 ]
 
 const linkTitle = (title: string, url?: string | null) => {

@@ -5,10 +5,11 @@ import EditIcon from '@mui/icons-material/Edit';
 import { useReactTable, getCoreRowModel, flexRender } from '@tanstack/react-table';
 import { useDrawerActions } from '@/contexts/DrawerContext';
 import type { ColumnDef } from '@tanstack/react-table';
+import type { MRT_RowData, MRT_ColumnDef } from 'material-react-table';
 
-type DetailPanelProps<TData> = {
+type DetailPanelProps<TData extends MRT_RowData> = {
   data: TData;
-  columns: ColumnDef<TData>[];
+  columns: MRT_ColumnDef<TData>[];
   title?: string;
   onEdit?: () => void;
   onDelete?: () => void;
@@ -21,7 +22,7 @@ export const DetailPanel = <TData extends Record<string, any>>({ data, columns, 
 
   const table = useReactTable({
     data: tableData,
-    columns,
+    columns: columns as ColumnDef<TData>[],
     getCoreRowModel: getCoreRowModel(),
   });
   const row = table.getRowModel().rows[0];

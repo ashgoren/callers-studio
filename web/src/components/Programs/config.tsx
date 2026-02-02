@@ -1,4 +1,4 @@
-import { CellLinkedDances } from "./CellLinkedDances";
+import { RelationCell } from '@/components/RelationCell';
 import { formatLocalDate } from '@/lib/utils';
 import type { MRT_ColumnDef } from 'material-react-table';
 import type { Program } from '@/lib/types/database';
@@ -40,10 +40,15 @@ export const columns: MRT_ColumnDef<Program>[] = [
   {
     id: 'dances',
     header: '🔗 Dances',
-    Cell: ({row}) => <CellLinkedDances programsDances={row.original.programs_dances} />,
     size: 300,
     minSize: 100,
-  },
+    Cell: ({row}) => <RelationCell
+      items={row.original.programs_dances}
+      model='dance'
+      getId={(joinRow) => joinRow.dance.id}
+      getLabel={(joinRow) => `${joinRow.order} - ${joinRow.dance.title}`}
+    />
+  }
 ];
 
 export const tableInitialState = {
