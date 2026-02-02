@@ -13,9 +13,10 @@ type DetailPanelProps<TData extends MRT_RowData> = {
   title?: string;
   onEdit?: () => void;
   onDelete?: () => void;
+  children?: React.ReactNode;
 };
 
-export const DetailPanel = <TData extends Record<string, any>>({ data, columns, title, onEdit, onDelete }: DetailPanelProps<TData>) => {
+export const DetailPanel = <TData extends Record<string, any>>({ data, columns, title, onEdit, onDelete, children }: DetailPanelProps<TData>) => {
   const { closeDrawer } = useDrawerActions();
 
   const tableData = useMemo(() => [data], [data]); // Wrap data in an array for single row
@@ -47,6 +48,7 @@ export const DetailPanel = <TData extends Record<string, any>>({ data, columns, 
           const column = cell.column;
 
           if (column.id === 'id') return null;
+          if (!('accessorKey' in column.columnDef)) return null;  // skip display-only columns
 
           const label = typeof column.columnDef.header === 'string'
             ? column.columnDef.header
@@ -64,6 +66,8 @@ export const DetailPanel = <TData extends Record<string, any>>({ data, columns, 
           );
         })}
       </Box>
+
+      {children} {/* list of linked items */}
 
       <Divider sx={{ my: 2 }} />
 

@@ -4,6 +4,7 @@ import { useDance } from '@/hooks/useDances';
 import { columns, newRecord } from './config';
 import { DetailPanel } from '@/components/DetailPanel';
 import { EditPanel } from '@/components/EditPanel';
+import { RelationList } from '@/components/RelationList';
 import { useDrawerState, useDrawerActions } from '@/contexts/DrawerContext';
 import type { DanceInsert, DanceUpdate } from '@/lib/types/database';
 
@@ -50,6 +51,14 @@ export const DanceDetails = ({ id }: { id?: number }) => {
       title={`Dance: ${dance.title}`}
       onEdit={() => setMode('edit')}
       onDelete={() => deleteDance({ id: id! })}
-    />
+    >
+      <RelationList
+        model='program'
+        label='🔗 Programs'
+        relations={dance.programs_dances}
+        getRelationId={(pd) => pd.program.id}
+        getRelationLabel={(pd) => `${pd.program.date} - ${pd.program.location}`}
+      />
+    </DetailPanel>
   );
 };

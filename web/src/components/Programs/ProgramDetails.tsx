@@ -4,6 +4,7 @@ import { useProgram } from '@/hooks/usePrograms';
 import { columns, newRecord } from './config';
 import { DetailPanel } from '@/components/DetailPanel';
 import { EditPanel } from '@/components/EditPanel';
+import { RelationList } from '@/components/RelationList';
 import { useDrawerState, useDrawerActions } from '@/contexts/DrawerContext';
 import { formatLocalDate } from '@/lib/utils';
 import type { ProgramInsert, ProgramUpdate } from '@/lib/types/database';
@@ -51,7 +52,15 @@ export const ProgramDetails = ({ id }: { id?: number }) => {
       title={`Program: ${formatDate(program)}`}
       onEdit={() => setMode('edit')}
       onDelete={() => deleteProgram({ id: id! })}
-    />
+    >
+      <RelationList
+        model='dance'
+        label='🔗 Dances'
+        relations={program.programs_dances}
+        getRelationId={(pd) => pd.dance.id}
+        getRelationLabel={(pd) => `${pd.order} - ${pd.dance.title}`}
+      />
+    </DetailPanel>
   );
 };
 
