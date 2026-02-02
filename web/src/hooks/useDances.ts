@@ -31,7 +31,7 @@ export const useUpdateDance = () => {
       queryClient.invalidateQueries({ queryKey: ['dances'] });
       success('Dance updated');
     },
-    onError: () => error('Error updating dance')
+    onError: (err: Error) => error(err.message || 'Error updating dance')
   });
 };
 
@@ -44,7 +44,7 @@ export const useCreateDance = () => {
       queryClient.invalidateQueries({ queryKey: ['dances'] });
       success('Dance created');
     },
-    onError: () => error('Error creating dance')
+    onError: (err: Error) => error(err.message || 'Error creating dance')
   });
 };
 
@@ -57,7 +57,7 @@ export const useDeleteDance = () => {
       queryClient.invalidateQueries({ queryKey: ['dances'] });
       info('Dance deleted');
     },
-    onError: () => error('Error deleting dance')
+    onError: (err: Error) => error(err.message || 'Error deleting dance')
   });
 };
 

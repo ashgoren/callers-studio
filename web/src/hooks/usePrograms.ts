@@ -31,7 +31,7 @@ export const useUpdateProgram = () => {
       queryClient.invalidateQueries({ queryKey: ['programs'] });
       success('Program updated');
     },
-    onError: () => error('Error updating program')
+    onError: (err: Error) => error(err.message || 'Error updating program')
   });
 };
 
@@ -44,7 +44,7 @@ export const useCreateProgram = () => {
       queryClient.invalidateQueries({ queryKey: ['programs'] });
       success('Program created');
     },
-    onError: () => error('Error creating program')
+    onError: (err: Error) => error(err.message || 'Error creating program')
   });
 };
 
@@ -57,7 +57,7 @@ export const useDeleteProgram = () => {
       queryClient.invalidateQueries({ queryKey: ['programs'] });
       info('Program deleted');
     },
-    onError: () => error('Error deleting program')
+    onError: (err: Error) => error(err.message || 'Error deleting program')
   });
 };
 
