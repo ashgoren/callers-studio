@@ -1,5 +1,4 @@
 import { formatQuery, type RuleGroupType, type RuleType } from 'react-querybuilder';
-import { fields } from '../Programs/columns';
 
 const evaluateRule = (row: any, rule: RuleType): boolean => {
   const { field, operator, value: filterValue } = rule;
@@ -110,5 +109,7 @@ export const evaluateQuery = (row: any, query: RuleGroupType): boolean => {
   }
 };
 
-const isDateField = (fieldName: string): boolean =>
-  fields.some(f => f.name === fieldName && f.inputType === 'date');
+const isDateField = (fieldName: string): boolean => {
+  const dateFields = ['createdAt', 'updatedAt', 'date'];
+  return dateFields.includes(fieldName);
+};

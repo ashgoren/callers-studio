@@ -5,16 +5,22 @@ import type { MRT_ColumnDef } from 'material-react-table'
 import type { Dance, DanceInsert } from '@/lib/types/database';
 import '@tanstack/react-table';
 
-export const fields = [
-  { name: 'title', label: 'Title', inputType: 'string' },
-  { name: 'choreographer', label: 'Choreographer', inputType: 'string' },
-  { name: 'difficulty', label: 'Difficulty', inputType: 'number' },
-  { name: 'notes', label: 'Notes', inputType: 'string' },
-  { name: 'place_in_program', label: 'Place in Program', inputType: 'string' },
-  { name: 'moves', label: 'Moves', inputType: 'string' },
-  { name: 'swing_16', label: '16-beat swing?', inputType: 'boolean' },
-  { name: 'programNames', label: 'Programs', inputType: 'string' },
-];
+// NEW RECORD CONFIG
+
+export const newRecord: DanceInsert = {
+  title: '',
+  choreographer: '',
+  difficulty: null,
+  notes: '',
+  place_in_program: '',
+  moves: '',
+  swing_16: null,
+  url: '',
+  video: '',
+};
+
+
+// TABLE CONFIG
 
 export const columns: MRT_ColumnDef<Dance>[] = [
   {
@@ -102,35 +108,6 @@ export const columns: MRT_ColumnDef<Dance>[] = [
   },
 ]
 
-export const newRecord: DanceInsert = {
-  title: '',
-  choreographer: '',
-  difficulty: null,
-  notes: '',
-  place_in_program: '',
-  moves: '',
-  swing_16: null,
-  url: '',
-  video: '',
-};
-
-export const options = {
-  initialState: {
-    sorting: [{ id: 'id', desc: false }],
-    columnPinning: { left: ['title'] },
-    columnVisibility: {
-      url: false,
-    },
-    density: 'compact' as const,
-    pagination: { pageSize: 100, pageIndex: 0 }
-  }
-};
-
-export const defaultQuery = {
-  combinator: 'and',
-  rules: [{ field: 'title', operator: 'contains', value: '' }]
-}
-
 const linkTitle = (title: string, url?: string | null) => {
   return url ? <ExternalLink url={url} title={title} /> : title;
 };
@@ -138,3 +115,32 @@ const linkTitle = (title: string, url?: string | null) => {
 const linkVideo = (video?: string | null) => {
   return video ? <ExternalLink url={video} title='Video' /> : null;
 };
+
+export const tableInitialState = {
+  sorting: [{ id: 'id', desc: false }],
+  columnPinning: { left: ['title'] },
+  columnVisibility: {
+    url: false,
+  },
+  density: 'compact' as const,
+  pagination: { pageSize: 100, pageIndex: 0 }
+};
+
+
+// QUERY CONFIG
+
+export const queryFields = [
+  { name: 'title', label: 'Title', inputType: 'string' },
+  { name: 'choreographer', label: 'Choreographer', inputType: 'string' },
+  { name: 'difficulty', label: 'Difficulty', inputType: 'number' },
+  { name: 'notes', label: 'Notes', inputType: 'string' },
+  { name: 'place_in_program', label: 'Place in Program', inputType: 'string' },
+  { name: 'moves', label: 'Moves', inputType: 'string' },
+  { name: 'swing_16', label: '16-beat swing?', inputType: 'boolean' },
+  { name: 'programNames', label: 'Programs', inputType: 'string' },
+];
+
+export const defaultQuery = {
+  combinator: 'and',
+  rules: [{ field: 'title', operator: 'contains', value: '' }]
+}

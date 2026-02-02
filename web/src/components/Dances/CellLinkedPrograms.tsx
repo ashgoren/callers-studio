@@ -1,7 +1,13 @@
 import { Box } from '@mui/material';
 import { useDrawerActions } from '@/contexts/DrawerContext';
 
-export const CellLinkedPrograms = ({ programsDances }: { programsDances: any[] }) => {
+import type { ProgramRow } from '@/lib/types/database';
+
+type DanceProgramLink = {
+  program: ProgramRow;
+}
+
+export const CellLinkedPrograms = ({ programsDances }: { programsDances: DanceProgramLink[] }) => {
   const { openDrawer } = useDrawerActions(); 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.5 }}>

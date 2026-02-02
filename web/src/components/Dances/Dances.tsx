@@ -2,12 +2,11 @@ import { useState, useEffect } from 'react';
 import { useTitle } from '@/contexts/TitleContext';
 import { useTable } from '@/hooks/useTable';
 import { useDances } from '@/hooks/useDances';
-// import { DataTable } from '@/components/DataTable';
 import { MaterialReactTable } from 'material-react-table';
 import { DetailDrawer } from '@/components/DetailDrawer';
 import { QueryBuilderComponent } from '@/components/QueryBuilder';
 import { TableControls } from '@/components/TableControls';
-import { fields, defaultQuery, columns, options } from './columns';
+import { queryFields, defaultQuery, columns, tableInitialState } from './config';
 import { useDrawerActions } from '@/contexts/DrawerContext';
 import { Spinner, ErrorMessage } from '@/components/shared';
 import { countActiveRules } from '../QueryBuilder/utils';
@@ -24,7 +23,14 @@ export const Dances = () => {
   };
 
   const { data, error, isLoading } = useDances();
-  const { table, query, setQuery } = useTable('dance', data, columns, defaultQuery, onRowClick, options);
+  const { table, query, setQuery } = useTable<Dance>({
+    model: 'dance',
+    data,
+    columns,
+    defaultQuery,
+    tableInitialState,
+    onRowClick,
+  });
 
   const [filterOpen, setFilterOpen] = useState(countActiveRules(query.rules) > 0);
 
@@ -40,7 +46,7 @@ export const Dances = () => {
       />
 
       <QueryBuilderComponent
-        fields={fields}
+        fields={queryFields}
         defaultQuery={defaultQuery}
         query={query}
         onQueryChange={setQuery}

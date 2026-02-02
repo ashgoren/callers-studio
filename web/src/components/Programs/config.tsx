@@ -3,11 +3,15 @@ import { formatLocalDate } from '@/lib/utils';
 import type { MRT_ColumnDef } from 'material-react-table';
 import type { Program } from '@/lib/types/database';
 
-export const fields = [
-  { name: 'date', label: 'Date', inputType: 'date' },
-  { name: 'location', label: 'Location', inputType: 'string' },
-  { name: 'danceNames', label: 'Dances', inputType: 'string' },
-];
+// NEW RECORD CONFIG
+
+export const newRecord = {
+  date: null,
+  location: '',
+}
+
+
+// TABLE CONFIG
 
 export const columns: MRT_ColumnDef<Program>[] = [
   {
@@ -42,18 +46,20 @@ export const columns: MRT_ColumnDef<Program>[] = [
   },
 ];
 
-export const newRecord = {
-  date: null,
-  location: '',
-}
-
-export const options = {
-  initialState: {
-    sorting: [{ id: 'date', desc: true }],
-    density: 'compact' as const,
-    pagination: { pageSize: 100, pageIndex: 0 }
-  }
+export const tableInitialState = {
+  sorting: [{ id: 'date', desc: true }],
+  density: 'compact' as const,
+  pagination: { pageSize: 100, pageIndex: 0 }
 };
+
+
+// QUERY CONFIG
+
+export const queryFields = [
+  { name: 'date', label: 'Date', inputType: 'date' },
+  { name: 'location', label: 'Location', inputType: 'string' },
+  { name: 'danceNames', label: 'Dances', inputType: 'string' },
+];
 
 export const defaultQuery = {
   combinator: 'and',

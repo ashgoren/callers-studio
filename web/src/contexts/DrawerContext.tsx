@@ -1,20 +1,21 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useMemo, type ReactNode } from 'react';
+import type { Model } from '@/lib/types/database';
 
 type DrawerMode = 'view' | 'edit' | 'create';
 
 type DrawerState = {
   isOpen: boolean;
-  model: string | null;
+  model: Model | null;
   id: number | null;
   mode: DrawerMode;
 };
 
 type DrawerActions = {
-  openDrawer: (model: string, id: number) => void;
+  openDrawer: (model: Model, id: number) => void;
   closeDrawer: () => void;
   setMode: (mode: DrawerMode) => void;
-  openDrawerForNewRecord: (model: string) => void;
+  openDrawerForNewRecord: (model: Model) => void;
 };
 
 const DrawerStateContext = createContext<DrawerState | null>(null);
@@ -26,13 +27,13 @@ export const DrawerProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const actions = useMemo(() => ({
-    openDrawer: (model: string, id: number) => {
+    openDrawer: (model: Model, id: number) => {
       setState(prev => {
         if (prev.mode !== 'view') return prev; // Prevent action if in edit/create mode
         return ({ isOpen: true, model, id, mode: 'view' });
       });
     },
-    openDrawerForNewRecord: (model: string) => {
+    openDrawerForNewRecord: (model: Model) => {
       setState(prev => {
         if (prev.mode !== 'view') return prev; // Prevent action if in edit/create mode
         return ({ isOpen: true, model, id: null, mode: 'create' });

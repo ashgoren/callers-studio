@@ -4,24 +4,26 @@ import { useMaterialReactTable } from 'material-react-table';
 import { evaluateQuery } from '@/components/QueryBuilder/queryEvaluator';
 import type { RuleGroupType } from 'react-querybuilder';
 import type { MRT_RowData, MRT_ColumnDef, MRT_TableOptions } from 'material-react-table';
+import type { Model } from '@/lib/types/database';
 
-export const useTable = <TData extends MRT_RowData>(
-  tableId: string,
+export const useTable = <TData extends MRT_RowData>({ model, data, columns, defaultQuery, tableInitialState, onRowClick }: {
+  model: Model,
   data: TData[] | undefined,
   columns: MRT_ColumnDef<TData>[],
   defaultQuery : RuleGroupType,
+  tableInitialState: Partial<MRT_TableOptions<TData>>['initialState'],
   onRowClick?: (row: TData) => void,
-  options?: Partial<MRT_TableOptions<TData>>
-) => {
+}) => {
   const [initialState] = useState(() =>
-    loadPersistence(`mrt_${tableId}`, {
+    loadPersistence(`mrt_${model}`, {
       query: defaultQuery,
-      sorting: options?.initialState?.sorting ?? [],
-      columnVisibility: options?.initialState?.columnVisibility ?? {},
-      columnOrder: options?.initialState?.columnOrder ?? [],
-      columnPinning: options?.initialState?.columnPinning ?? {},
-      columnSizing: options?.initialState?.columnSizing ?? {},
-      density: options?.initialState?.density ?? 'comfortable',
+      sorting: tableInitialState?.sorting ?? [],
+      columnVisibility: tableInitialState?.columnVisibility ?? {},
+      columnOrder: tableInitialState?.columnOrder ?? [],
+      columnPinning: tableInitialState?.columnPinning ?? {},
+      columnSizing: tableInitialState?.columnSizing ?? {},
+      density: tableInitialState?.density ?? 'comfortable',
+      pagination: tableInitialState?.pagination ?? { pageIndex: 0, pageSize: 50 }
     })
   );
   const [query, setQuery] = useState<RuleGroupType>(initialState.query);
@@ -31,26 +33,28 @@ export const useTable = <TData extends MRT_RowData>(
   const [columnPinning, setColumnPinning] = useState(initialState.columnPinning);
   const [columnSizing, setColumnSizing] = useState(initialState.columnSizing);
   const [density, setDensity] = useState(initialState.density);
+  const [pagination, setPagination] = useState(initialState.pagination);
 
   const filteredData = useMemo(
     () => (data ?? []).filter(row => evaluateQuery(row, query)),
     [data, query]
   );
 
-  usePersistState(`mrt_${tableId}`, {
-    sorting, columnVisibility, columnOrder, columnPinning, columnSizing, density, query
-  });
+  const tableState = { sorting, columnVisibility, columnOrder, columnPinning, columnSizing, density, pagination, query };
+
+  usePersistState(`mrt_${model}`, { ...tableState, query });
 
   const table = useMaterialReactTable({
     columns,
     data: filteredData,
-    state: { sorting, columnVisibility, columnOrder, columnPinning, columnSizing, density },
+    state: tableState,
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
     onColumnOrderChange: setColumnOrder,
     onColumnPinningChange: setColumnPinning,
     onColumnSizingChange: setColumnSizing,
     onDensityChange: setDensity,
+    onPaginationChange: setPagination,
     enableColumnPinning: true,
     enableColumnOrdering: true,
     enableColumnFilterModes: false,
@@ -62,11 +66,9 @@ export const useTable = <TData extends MRT_RowData>(
     columnResizeMode: 'onChange',
     muiTableBodyRowProps: ({ row }) => ({
       onClick: () => onRowClick?.(row.original),
-      sx: {
-        cursor: onRowClick ? 'pointer' : 'default',
-      },
+      sx: { cursor: onRowClick ? 'pointer' : 'default' }
     }),
-    ...options
+    initialState: tableInitialState
   });
 
   return { table, query, setQuery };

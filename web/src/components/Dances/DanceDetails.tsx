@@ -1,7 +1,7 @@
 import { useCreateDance, useUpdateDance, useDeleteDance } from '@/hooks/useDances';
 import { Spinner, ErrorMessage } from '@/components/shared';
 import { useDance } from '@/hooks/useDances';
-import { columns, newRecord } from './columns';
+import { columns, newRecord } from './config';
 import { DetailPanel } from '@/components/DetailPanel';
 import { EditPanel } from '@/components/EditPanel';
 import { useDrawerState, useDrawerActions } from '@/contexts/DrawerContext';

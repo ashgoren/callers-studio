@@ -5,6 +5,8 @@ import type { Database } from './database_generated';
 
 type Tables = Database['public']['Tables'];
 
+export type Model = 'dance' | 'program';
+
 export type DanceRow = Tables['dances']['Row'];
 export type Dance = DanceRow & {
   programs_dances: { program: ProgramRow }[];

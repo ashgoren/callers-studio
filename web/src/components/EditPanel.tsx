@@ -4,10 +4,11 @@ import CloseIcon from '@mui/icons-material/Close';
 import SaveIcon from '@mui/icons-material/Save';
 import { useReactTable, getCoreRowModel } from '@tanstack/react-table';
 import { useDrawerActions } from '@/contexts/DrawerContext';
+import type { ColumnDef } from '@tanstack/react-table';
 
 type EditPanelProps<TData> = {
   data: TData;
-  columns: any[];
+  columns: ColumnDef<TData>[];
   title?: string;
   onSave: (updates: any) => Promise<unknown>;
   onCancel: () => void;

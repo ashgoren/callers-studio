@@ -1,7 +1,7 @@
 import { useCreateProgram, useUpdateProgram, useDeleteProgram } from '@/hooks/usePrograms';
 import { Spinner, ErrorMessage } from '@/components/shared';
 import { useProgram } from '@/hooks/usePrograms';
-import { columns, newRecord } from '../Programs/columns';
+import { columns, newRecord } from './config';
 import { DetailPanel } from '@/components/DetailPanel';
 import { EditPanel } from '@/components/EditPanel';
 import { useDrawerState, useDrawerActions } from '@/contexts/DrawerContext';

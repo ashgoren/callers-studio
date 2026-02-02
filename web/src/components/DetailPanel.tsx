@@ -4,10 +4,11 @@ import CloseIcon from '@mui/icons-material/Close';
 import EditIcon from '@mui/icons-material/Edit';
 import { useReactTable, getCoreRowModel, flexRender } from '@tanstack/react-table';
 import { useDrawerActions } from '@/contexts/DrawerContext';
+import type { ColumnDef } from '@tanstack/react-table';
 
 type DetailPanelProps<TData> = {
   data: TData;
-  columns: any[];
+  columns: ColumnDef<TData>[];
   title?: string;
   onEdit?: () => void;
   onDelete?: () => void;

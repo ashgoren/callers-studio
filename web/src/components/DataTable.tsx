@@ -1,3 +1,6 @@
+// This is a custom DataTable component built using MUI and TanStack Table (React Table).
+// At the moment I'm using Material React Table in place of this.
+
 import { useState } from 'react';
 import { flexRender, type Table as ReactTable, type Column } from '@tanstack/react-table';
 import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel, Box } from '@mui/material';

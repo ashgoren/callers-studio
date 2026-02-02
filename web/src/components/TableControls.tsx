@@ -5,9 +5,10 @@ import { clearPersistence } from '@/hooks/usePersistence';
 import { useDrawerActions } from '@/contexts/DrawerContext';
 import type { RuleGroupType } from 'react-querybuilder';
 import type { Dispatch, SetStateAction } from 'react';
+import type { Model } from '@/lib/types/database';
 
 export const TableControls = ({ model, query, setFilterOpen }: {
-  model: string;
+  model: Model;
   query: RuleGroupType;
   setFilterOpen: Dispatch<SetStateAction<boolean>>;
 }) => {
