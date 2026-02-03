@@ -1,2 +1,2 @@
 export * from './Dances';
-export * from './DanceDetails';
+export * from './Dance';

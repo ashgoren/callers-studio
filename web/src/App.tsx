@@ -1,7 +1,3 @@
-import { SnackbarProvider, closeSnackbar } from 'notistack'
-import { IconButton } from '@mui/material';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import CloseIcon from '@mui/icons-material/Close';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { LocalizationProvider } from '@mui/x-date-pickers';
@@ -24,24 +20,13 @@ function App() {
           <QueryClientProvider client={queryClient}>
             <TitleProvider>
               <DrawerProvider>
-                <SnackbarProvider
-                  maxSnack={3}
-                  autoHideDuration={4000}
-                  iconVariant={{ error: <ErrorOutlineIcon sx={{mr: 1}} />  }}
-                  action={(snackbarId) => (
-                    <IconButton size='small' color='inherit' onClick={() => closeSnackbar(snackbarId)}>
-                      <CloseIcon fontSize='small' />
-                    </IconButton>
-                  )}
-                >
-                  <Layout>
-                    <Routes>
-                      <Route path='/' element={<Home />} />
-                      <Route path='/dances' element={<Dances />} />
-                      <Route path='/programs' element={<Programs />} />
-                    </Routes>
-                  </Layout>
-                </SnackbarProvider>
+                <Layout>
+                  <Routes>
+                    <Route path='/' element={<Home />} />
+                    <Route path='/dances' element={<Dances />} />
+                    <Route path='/programs' element={<Programs />} />
+                  </Routes>
+                </Layout>
               </DrawerProvider>
             </TitleProvider>
           </QueryClientProvider>

@@ -12,7 +12,7 @@ import { useDrawerState, useDrawerActions } from '@/contexts/DrawerContext';
 import { formatLocalDate } from '@/lib/utils';
 import type { ProgramInsert, ProgramUpdate } from '@/lib/types/database';
 
-export const ProgramDetails = ({ id }: { id?: number }) => {
+export const Program = ({ id }: { id?: number }) => {
   const { mode } = useDrawerState();
   const { setMode, closeDrawer } = useDrawerActions();
 

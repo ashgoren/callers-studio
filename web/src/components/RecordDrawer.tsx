@@ -2,12 +2,12 @@ import { useEffect } from 'react';
 import { Drawer, Box, ClickAwayListener } from '@mui/material';
 import { useDrawerState } from '@/contexts/DrawerContext';
 import { useDrawerActions } from '@/contexts/DrawerContext';
-import { DanceDetails } from './Dances/DanceDetails';
-import { ProgramDetails } from './Programs/ProgramDetails';
+import { Dance } from './Dances/Dance';
+import { Program } from './Programs/Program';
 
 const DETAIL_COMPONENTS: Record<string, React.ComponentType<{ id?: number }>> = {
-  dance: DanceDetails,
-  program: ProgramDetails,
+  dance: Dance,
+  program: Program,
 };
 
 export const RecordDrawer = () => {

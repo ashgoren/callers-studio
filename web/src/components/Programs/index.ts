@@ -1,3 +1,3 @@
 export * from './Programs';
-export * from './ProgramDetails';
+export * from './Program';
           

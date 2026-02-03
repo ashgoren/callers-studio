@@ -7,7 +7,7 @@ import { RelationList } from '@/components/RelationList';
 import { useDrawerState, useDrawerActions } from '@/contexts/DrawerContext';
 import type { DanceInsert, DanceUpdate } from '@/lib/types/database';
 
-export const DanceDetails = ({ id }: { id?: number }) => {
+export const Dance = ({ id }: { id?: number }) => {
   const { mode } = useDrawerState();
   const { setMode, closeDrawer } = useDrawerActions();
   const { mutateAsync: createDance } = useCreateDance();

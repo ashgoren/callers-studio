@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { MaterialReactTable } from 'material-react-table';
 import { useTable } from '@/hooks/useTable';
-import { RecordDrawer } from '@/components/RecordDrawer';
 import { QueryBuilderComponent } from '@/components/QueryBuilder';
 import { TableControls } from '@/components/TableControls';
 import { useDrawerActions } from '@/contexts/DrawerContext';
@@ -58,8 +57,6 @@ export const TablePage = <TData extends MRT_RowData & { id: number }>({ model, u
       />
 
       <MaterialReactTable table={table} />
-
-      <RecordDrawer />
     </>
   );
 };

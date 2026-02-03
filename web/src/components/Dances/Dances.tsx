@@ -10,13 +10,15 @@ export const Dances = () => {
   useEffect(() => setTitle('Dances'), [setTitle]);
 
   return (
-    <TablePage<Dance>
-      model='dance'
-      useData={useDances}
-      columns={columns}
-      queryFields={queryFields}
-      defaultQuery={defaultQuery}
-      tableInitialState={tableInitialState}
-    />
+    <>
+      <TablePage<Dance>
+        model='dance'
+        useData={useDances}
+        columns={columns}
+        queryFields={queryFields}
+        defaultQuery={defaultQuery}
+        tableInitialState={tableInitialState}
+      />
+    </>
   );
 };
