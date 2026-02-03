@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
-import { Box, Typography, IconButton, Button, Divider } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
+import { Box, Typography, Button } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import { useReactTable, getCoreRowModel, flexRender } from '@tanstack/react-table';
 import { useDrawerActions } from '@/contexts/DrawerContext';
+import { DrawerLayout } from './DrawerLayout';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { MRT_RowData, MRT_ColumnDef } from 'material-react-table';
 
@@ -17,8 +17,6 @@ type DetailPanelProps<TData extends MRT_RowData> = {
 };
 
 export const DetailPanel = <TData extends Record<string, any>>({ data, columns, title, onEdit, onDelete, children }: DetailPanelProps<TData>) => {
-  const { closeDrawer } = useDrawerActions();
-
   const tableData = useMemo(() => [data], [data]); // Wrap data in an array for single row
 
   const table = useReactTable({
@@ -29,19 +27,10 @@ export const DetailPanel = <TData extends Record<string, any>>({ data, columns, 
   const row = table.getRowModel().rows[0];
 
   return (
-    <Box>
-      {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant='h6' noWrap sx={{ flex: 1 }}>
-          {title || 'Details'}
-        </Typography>
-        <IconButton onClick={closeDrawer} size='small'>
-          <CloseIcon />
-        </IconButton>
-      </Box>
-
-      <Divider sx={{ mb: 2 }} />
-
+    <DrawerLayout
+      title={title || 'Details'}
+      footer={<Footer onEdit={onEdit} onDelete={onDelete} />}
+    >
       {/* Fields */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {row.getAllCells().map((cell) => {
@@ -67,15 +56,22 @@ export const DetailPanel = <TData extends Record<string, any>>({ data, columns, 
         })}
       </Box>
 
-      {children} {/* list of linked items */}
+      {/* Relation fields (linked items) */}
+      {children}
+    </DrawerLayout>
+  );
+};
 
-      <Divider sx={{ my: 2 }} />
+const Footer = ({ onEdit, onDelete }: { onEdit?: () => void; onDelete?: () => void }) => {
+  const { closeDrawer } = useDrawerActions();
 
+  return (
+    <>
       {/* Actions */}
       {onEdit && (
         <Button
           variant='contained'
-          color='secondary'
+          color='warning'
           startIcon={<EditIcon />}
           onClick={onEdit}
           fullWidth
@@ -86,7 +82,7 @@ export const DetailPanel = <TData extends Record<string, any>>({ data, columns, 
 
       {onDelete && (
         <Button
-          variant='outlined'
+          variant='contained'
           color='error'
           onClick={() => {
             if (confirm('Are you sure you want to delete this item?')) {
@@ -100,6 +96,6 @@ export const DetailPanel = <TData extends Record<string, any>>({ data, columns, 
           Delete
         </Button>
       )}
-    </Box>
+    </>
   );
 };

@@ -42,9 +42,9 @@ export const DetailDrawer = () => {
         variant='persistent'
         anchor='right'
         open={isOpen}
-        sx={{ '& .MuiDrawer-paper': { width: 400, height: '100vh', overflowY: 'auto'} }}
+        sx={{ '& .MuiDrawer-paper': { width: 400, height: '100vh'} }}
       >
-        <Box sx={{ p: 2 }}>
+        <Box sx={{ p: 2, height: '100%' }}>
           <DetailComponent id={id ?? undefined} />
         </Box>
       </Drawer>

@@ -1,9 +1,8 @@
 import { useState, useMemo } from 'react';
-import { Box, Typography, TextField, Button, Divider, IconButton, Checkbox, FormControlLabel } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
+import { Box, TextField, Button, Checkbox, FormControlLabel } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import { useReactTable, getCoreRowModel } from '@tanstack/react-table';
-import { useDrawerActions } from '@/contexts/DrawerContext';
+import { DrawerLayout } from './DrawerLayout';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { MRT_RowData, MRT_ColumnDef } from 'material-react-table';
 
@@ -18,7 +17,6 @@ type EditPanelProps<TData extends MRT_RowData> = {
 };
 
 export const EditPanel = <TData extends Record<string, any>>({ data, columns, title, onSave, hasPendingRelationChanges, onCancel, children }: EditPanelProps<TData>) => {
-  const { closeDrawer } = useDrawerActions();
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<Partial<TData>>({ ...data });
 
@@ -34,14 +32,6 @@ export const EditPanel = <TData extends Record<string, any>>({ data, columns, ti
   const isDirty = useMemo(() => {
     return Object.keys(formData).some((key) => formData[key] !== data[key]);
   }, [formData, data]);
-
-  const handleClose = () => {
-    if (isDirty) {
-      const confirmClose = window.confirm('You have unsaved changes. Are you sure you want to discard them?');
-      if (!confirmClose) return;
-    }
-    closeDrawer();
-  };
 
   const handleCancel = () => {
     if (isDirty || hasPendingRelationChanges) {
@@ -77,18 +67,33 @@ export const EditPanel = <TData extends Record<string, any>>({ data, columns, ti
   };
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant='h6' noWrap sx={{ flex: 1 }}>
-          {title || 'Edit'}
-        </Typography>
-        <IconButton onClick={handleClose} size='small'>
-          <CloseIcon />
-        </IconButton>
-      </Box>
-
-      <Divider sx={{ mb: 2 }} />
-
+    <DrawerLayout
+      title={title || 'Edit'}
+      onClose={handleCancel}
+      footer={
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            variant='outlined'
+            color='inherit'
+            onClick={handleCancel}
+            fullWidth
+            disabled={saving}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant='contained'
+            color='success'
+            startIcon={<SaveIcon />}
+            onClick={handleSubmit}
+            fullWidth
+            disabled={saving}
+          >
+            {saving ? 'Saving...' : 'Save'}
+          </Button>
+        </Box>
+      }
+    >
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {row.getAllCells().map((cell) => {
           const column = cell.column;
@@ -137,26 +142,10 @@ export const EditPanel = <TData extends Record<string, any>>({ data, columns, ti
         })}
       </Box>
 
+
       {children} {/* render associations edit component here */}
 
-      <Divider sx={{ my: 2 }} />
-
-      <Box sx={{ display: 'flex', gap: 1 }}>
-        <Button variant='outlined' color='inherit' onClick={handleCancel} fullWidth disabled={saving}>
-          Cancel
-        </Button>
-        <Button
-          variant='contained'
-          color='success'
-          startIcon={<SaveIcon />}
-          onClick={handleSubmit}
-          fullWidth
-          disabled={saving}
-        >
-          {saving ? 'Saving...' : 'Save'}
-        </Button>
-      </Box>
-    </Box>
+    </DrawerLayout>
   );
 };
 
