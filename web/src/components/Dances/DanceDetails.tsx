@@ -1,6 +1,5 @@
-import { useCreateDance, useUpdateDance, useDeleteDance } from '@/hooks/useDances';
+import { useDance, useCreateDance, useUpdateDance, useDeleteDance } from '@/hooks/useDances';
 import { Spinner, ErrorMessage } from '@/components/shared';
-import { useDance } from '@/hooks/useDances';
 import { columns, newRecord } from './config';
 import { DetailPanel } from '@/components/DetailPanel';
 import { EditPanel } from '@/components/EditPanel';
@@ -19,11 +18,11 @@ export const DanceDetails = ({ id }: { id?: number }) => {
   if (mode === 'create') {
     return (
       <EditPanel
-      data={newRecord}
-      columns={columns}
-      title={'New Dance'}
-      onSave={(data: DanceInsert) => createDance(data)}
-      onCancel={() => closeDrawer()}
+        data={newRecord}
+        columns={columns}
+        title={'New Dance'}
+        onSave={(data: DanceInsert) => createDance(data)}
+        onCancel={() => closeDrawer()}
       />
     );
   }

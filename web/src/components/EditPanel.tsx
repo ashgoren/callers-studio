@@ -12,10 +12,12 @@ type EditPanelProps<TData extends MRT_RowData> = {
   columns: MRT_ColumnDef<TData>[];
   title?: string;
   onSave: (updates: any) => Promise<unknown>;
+  hasPendingRelationChanges: boolean;
   onCancel: () => void;
+  children?: React.ReactNode;
 };
 
-export const EditPanel = <TData extends Record<string, any>>({ data, columns, title, onSave, onCancel }: EditPanelProps<TData>) => {
+export const EditPanel = <TData extends Record<string, any>>({ data, columns, title, onSave, hasPendingRelationChanges, onCancel, children }: EditPanelProps<TData>) => {
   const { closeDrawer } = useDrawerActions();
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<Partial<TData>>({ ...data });
@@ -42,7 +44,7 @@ export const EditPanel = <TData extends Record<string, any>>({ data, columns, ti
   };
 
   const handleCancel = () => {
-    if (isDirty) {
+    if (isDirty || hasPendingRelationChanges) {
       const confirmCancel = window.confirm('You have unsaved changes. Are you sure you want to discard them?');
       if (!confirmCancel) return;
     }
@@ -134,6 +136,8 @@ export const EditPanel = <TData extends Record<string, any>>({ data, columns, ti
           );
         })}
       </Box>
+
+      {children} {/* render associations edit component here */}
 
       <Divider sx={{ my: 2 }} />
 
