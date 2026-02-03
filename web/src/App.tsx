@@ -7,7 +7,7 @@ import { queryClient } from './lib/react-query';
 import { TitleProvider } from './contexts/TitleContext';
 import { DrawerProvider } from '@/contexts/DrawerContext';
 import { BrowserRouter, Routes, Route } from 'react-router';
-import { Layout } from './components/Layout';
+import { Layout } from './components/layouts/Layout';
 import { Dances } from './components/Dances';
 import { Programs } from './components/Programs';
 import { Home } from './components/Home';
