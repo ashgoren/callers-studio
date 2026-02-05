@@ -30,15 +30,13 @@ export const Program = ({ id }: { id?: number }) => {
   const { data: program, isLoading, error } = useProgram(Number(id));
 
   const handleSave = async (updates: ProgramUpdate) => {
-    await updateProgram({ id: program!.id, updates });
+    const { id: programId} = mode === 'create'
+      ? await createProgram(updates as ProgramInsert)
+      : await updateProgram({ id: program!.id, updates });
 
     await Promise.all([
-      ...pendingAdds.map(({ danceId, order }) =>
-        addDance({ programId: program!.id, danceId, order })
-      ),
-      ...pendingRemoves.map(danceId =>
-        removeDance({ programId: program!.id, danceId })
-      ),
+      ...pendingAdds.map(({ danceId, order }) => addDance({ programId, danceId, order })),
+      ...pendingRemoves.map(danceId => removeDance({ programId, danceId }))
     ]);
   };
 
@@ -54,10 +52,25 @@ export const Program = ({ id }: { id?: number }) => {
         data={newRecord}
         columns={columns}
         title={'New Program'}
-        onSave={(data: ProgramInsert) => createProgram(data)}
+        onSave={handleSave}
         hasPendingRelationChanges={pendingAdds.length > 0 || pendingRemoves.length > 0}
         onCancel={() => closeDrawer()}
-      />
+      >
+        <ProgramDancesEditor
+          programDances={[]}
+          dances={dances ?? []}
+          pendingAdds={pendingAdds}
+          pendingRemoves={pendingRemoves}
+          onAdd={(danceId, order) => setPendingAdds((prev) => [...prev, { danceId, order }])}
+          onRemove={(danceId) => {
+            if (pendingAdds.find((pa) => pa.danceId === danceId)) {
+              setPendingAdds((prev) => prev.filter((pa) => pa.danceId !== danceId));
+            } else {
+              setPendingRemoves((prev) => [...prev, danceId]);
+            }
+          }}
+        />
+      </RecordEdit>
     );
   }
 
@@ -76,7 +89,7 @@ export const Program = ({ id }: { id?: number }) => {
         onCancel={handleCancel}
       >
         <ProgramDancesEditor
-          program={program}
+          programDances={program.programs_dances}
           dances={dances ?? []}
           pendingAdds={pendingAdds}
           pendingRemoves={pendingRemoves}

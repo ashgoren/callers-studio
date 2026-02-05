@@ -38,11 +38,14 @@ export const updateProgram = async (id: number, updates: ProgramUpdate) => {
 };
 
 export const createProgram = async (newProgram: ProgramInsert) => {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('programs')
-    .insert(newProgram);
+    .insert(newProgram)
+    .select('*, programs_dances(order, dance:dances(*))')
+    .single();
 
   if (error) throw new Error(error.message);
+  return data as Program;
 };
 
 export const deleteProgram = async (id: number) => {

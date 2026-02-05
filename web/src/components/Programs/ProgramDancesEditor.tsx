@@ -5,7 +5,7 @@ import AddIcon from '@mui/icons-material/Add';
 import type { Program, Dance } from '@/lib/types/database';
 
 type ProgramDanceEditorProps = {
-  program: Program;
+  programDances: Program['programs_dances'];
   pendingAdds: { danceId: number; order: number }[];
   pendingRemoves: number[];
   dances: Dance[];
@@ -13,12 +13,12 @@ type ProgramDanceEditorProps = {
   onRemove: (danceId: number) => void;
 };
 
-export const ProgramDancesEditor = ({ program, dances, pendingAdds, pendingRemoves, onAdd, onRemove }: ProgramDanceEditorProps) => {
+export const ProgramDancesEditor = ({ programDances, dances, pendingAdds, pendingRemoves, onAdd, onRemove }: ProgramDanceEditorProps) => {
   const [selectedDance, setSelectedDance] = useState<Dance | null>(null);
   const [order, setOrder] = useState<number | ''>('');
 
-  const displayedRelations = computeDisplayedRelations({ program, dances, pendingAdds, pendingRemoves });
-  const availableOptions = computeAvailableOptions({ program, dances, pendingAdds, pendingRemoves });
+  const displayedRelations = computeDisplayedRelations({ programDances, dances, pendingAdds, pendingRemoves });
+  const availableOptions = computeAvailableOptions({ programDances, dances, pendingAdds, pendingRemoves });
 
   const handleAdd = () => {
     if (!selectedDance || order === '') return;
@@ -98,13 +98,14 @@ export const ProgramDancesEditor = ({ program, dances, pendingAdds, pendingRemov
   );
 };
 
-const computeDisplayedRelations = ({ program, dances, pendingAdds, pendingRemoves }: {
-  program: Program,
+
+const computeDisplayedRelations = ({ programDances, dances, pendingAdds, pendingRemoves }: {
+  programDances: Program['programs_dances'],
   dances: Dance[],
   pendingAdds: { danceId: number; order: number }[],
   pendingRemoves: number[]
 }) => {
-  const withoutRemovedDances = program.programs_dances
+  const withoutRemovedDances = programDances
     .filter(pd => !pendingRemoves.includes(pd.dance.id))
     .map(pd => ({ danceId: pd.dance.id, order: pd.order, title: pd.dance.title, isPending: false }));
 
@@ -117,14 +118,14 @@ const computeDisplayedRelations = ({ program, dances, pendingAdds, pendingRemove
     .sort((a, b) => a.order - b.order);
 };
 
-const computeAvailableOptions = ({ program, dances, pendingAdds, pendingRemoves }: {
-  program: Program,
+const computeAvailableOptions = ({ programDances, dances, pendingAdds, pendingRemoves }: {
+  programDances: Program['programs_dances'],
   dances: Dance[],
   pendingAdds: { danceId: number; order: number }[],
   pendingRemoves: number[]
 }) => {
   const linkedIds = new Set(
-    program.programs_dances
+    programDances
       .map(pd => pd.dance.id)
       .filter(id => !pendingRemoves.includes(id))
       .concat(pendingAdds.map(pa => pa.danceId))
