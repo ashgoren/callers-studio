@@ -18,8 +18,8 @@ export const columns: MRT_ColumnDef<Program>[] = [
     accessorKey: 'id',
     header: 'ID',
     enableColumnFilter: false,
-    size: 20,
-    minSize: 20,
+    size: 120,
+    minSize: 55,
   },
   {
     accessorKey: 'date',

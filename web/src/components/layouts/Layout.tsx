@@ -12,7 +12,7 @@ import type { ReactNode } from 'react';
 export const Layout = ({ children }: { children: ReactNode }) => {
   const { isOpen } = useDrawerState();
 
-  const drawerWidth = 400;
+  const DRAWER_WIDTH = 400;
 
   return (
     <ThemeProvider theme={theme} defaultMode='system'>
@@ -28,14 +28,16 @@ export const Layout = ({ children }: { children: ReactNode }) => {
         )}
       >
         <Box sx={{
-          mr: isOpen ? `${drawerWidth}px` : 0,
+          width: `calc(100vw - ${isOpen ? DRAWER_WIDTH : 0}px)`,
+          // mr: isOpen ? `${DRAWER_WIDTH}px` : 0,
+          backgroundColor: 'background.default',
           transition: theme => theme.transitions.create('margin', {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.leavingScreen,
           })
         }}>
-          <Box sx={{ p: 2, pt: 1, margin: 0, width: '100vw', boxSizing: 'border-box' }}>
-            <NavBar />
+          <NavBar />
+          <Box component='main' sx={{ p: 2 }}>
             <RecordDrawer />
             {children}
           </Box>

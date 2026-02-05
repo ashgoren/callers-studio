@@ -15,7 +15,7 @@ export const TitleProvider = ({ children }: { children: React.ReactNode }) => {
   const [title, setTitle] = useState("Caller's Box");
 
   useEffect(() => {
-    document.title = `${title} | Caller's Box`;
+    document.title = title && title !== "Caller's Box" ? `${title} | Caller's Box` : "Caller's Box";
   }, [title]);
 
   return (

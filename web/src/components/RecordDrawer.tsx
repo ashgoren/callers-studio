@@ -5,6 +5,8 @@ import { useDrawerActions } from '@/contexts/DrawerContext';
 import { Dance } from './Dances/Dance';
 import { Program } from './Programs/Program';
 
+const DRAWER_WIDTH = 400;
+
 const DETAIL_COMPONENTS: Record<string, React.ComponentType<{ id?: number }>> = {
   dance: Dance,
   program: Program,
@@ -42,7 +44,7 @@ export const RecordDrawer = () => {
         variant='persistent'
         anchor='right'
         open={isOpen}
-        sx={{ '& .MuiDrawer-paper': { width: 400, height: '100vh'} }}
+        sx={{ '& .MuiDrawer-paper': { width: DRAWER_WIDTH, height: '100vh'} }}
       >
         <Box sx={{ p: 2, height: '100%' }}>
           <DetailComponent id={id ?? undefined} />
