@@ -29,6 +29,7 @@ export const columns: MRT_ColumnDef<Program>[] = [
     size: 50,
     minSize: 50,
     Cell: ({row}) => row.original ? formatLocalDate(row.original.date!) : '',
+    meta: { inputType: 'date' }
   },
   {
     accessorKey: 'location',

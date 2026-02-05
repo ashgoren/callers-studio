@@ -1,10 +1,20 @@
 import { useState, useMemo } from 'react';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { Box, TextField, Button, Checkbox, FormControlLabel } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import { useReactTable, getCoreRowModel } from '@tanstack/react-table';
 import { DrawerLayout } from './DrawerLayout';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { MRT_RowData, MRT_ColumnDef } from 'material-react-table';
+
+type InputFieldType = 'boolean' | 'number' | 'date' | 'text';
+
+type ColumnDefWithMeta<TData> = ColumnDef<TData> & {
+  meta?: {
+    inputType?: InputFieldType;
+    readonly?: boolean;
+  };
+};
 
 type RecordEditProps<TData extends MRT_RowData> = {
   data: Partial<TData>;
@@ -94,7 +104,7 @@ export const RecordEdit = <TData extends MRT_RowData>({ data, columns, title, on
         </Box>
       }
     >
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
         {row.getAllCells().map((cell) => {
           const column = cell.column;
           const key = column.id;
@@ -102,14 +112,14 @@ export const RecordEdit = <TData extends MRT_RowData>({ data, columns, title, on
           // Skip non-editable columns
           if (key === 'id') return null; // skip id column
           if (!('accessorKey' in column.columnDef)) return null; // skip display columns
-          // if (column.columnDef.meta?.readonly) return null;
+          if ((column.columnDef as ColumnDefWithMeta<TData>).meta?.readonly) return null;
 
           const label = typeof column.columnDef.header === 'string'
             ? column.columnDef.header
             : key;
 
           const value = formData[key];
-          const fieldType = inferFieldType(data[key]);
+          const fieldType = (column.columnDef as ColumnDefWithMeta<TData>).meta?.inputType || inferFieldType(data[key]);
 
           return (
             <Box key={cell.id}>
@@ -122,6 +132,13 @@ export const RecordEdit = <TData extends MRT_RowData>({ data, columns, title, on
                     />
                   }
                   label={label}
+                />
+              ) : fieldType === 'date' ? (
+                <DatePicker
+                  label={label}
+                  value={value ? new Date(value) : null}
+                  onChange={(newValue) => handleChange(key, newValue)}
+                  slotProps={{ textField: { size: 'small', fullWidth: true } }}
                 />
               ) : (
                 <TextField
@@ -149,8 +166,9 @@ export const RecordEdit = <TData extends MRT_RowData>({ data, columns, title, on
   );
 };
 
-const inferFieldType = (value: unknown): 'boolean' | 'number' | 'text' => {
+const inferFieldType = (value: unknown): InputFieldType => {
   if (typeof value === 'boolean') return 'boolean';
   if (typeof value === 'number') return 'number';
+  if (value instanceof Date || (typeof value === 'string' && !isNaN(Date.parse(value)))) return 'date';
   return 'text';
 };
