@@ -24,7 +24,6 @@ export const columns: MRT_ColumnDef<Program>[] = [
   {
     accessorKey: 'date',
     header: 'Date',
-    accessorFn: row => row.date ? new Date(row.date) : null,
     filterVariant: 'date-range',
     columnFilterModeOptions: ['between', 'greaterThan', 'lessThan', 'equals'],
     size: 50,

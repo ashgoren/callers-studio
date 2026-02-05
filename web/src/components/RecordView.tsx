@@ -1,11 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { Box, Typography, Button } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
-import { useReactTable, getCoreRowModel, flexRender } from '@tanstack/react-table';
+import { useMaterialReactTable } from 'material-react-table';
 import { useDrawerActions } from '@/contexts/DrawerContext';
 import { DrawerLayout } from './DrawerLayout';
-import type { ColumnDef } from '@tanstack/react-table';
-import type { MRT_RowData, MRT_ColumnDef } from 'material-react-table';
+import type { MRT_RowData, MRT_ColumnDef, MRT_Cell } from 'material-react-table';
 
 type RecordViewProps<TData extends MRT_RowData> = {
   data: TData;
@@ -19,10 +18,24 @@ type RecordViewProps<TData extends MRT_RowData> = {
 export const RecordView = <TData extends Record<string, any>>({ data, columns, title, onEdit, onDelete, children }: RecordViewProps<TData>) => {
   const tableData = useMemo(() => [data], [data]); // Wrap data in an array for single row
 
-  const table = useReactTable({
+  // Custom cell renderer to handle MRT's Cell rendering outside of the table context
+  const renderCell = (cell: MRT_Cell<TData, unknown>) => {
+    const { Cell } = cell.column.columnDef;
+    if (Cell) {
+      return Cell({
+        cell,
+        column: cell.column,
+        row: cell.row,
+        table,
+        renderedCellValue: cell.getValue(),
+      } as any);
+    }
+    return (cell.getValue() as ReactNode) ?? '';
+  };
+
+  const table = useMaterialReactTable({
     data: tableData,
-    columns: columns as ColumnDef<TData>[],
-    getCoreRowModel: getCoreRowModel(),
+    columns,
   });
   const row = table.getRowModel().rows[0];
 
@@ -35,12 +48,13 @@ export const RecordView = <TData extends Record<string, any>>({ data, columns, t
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {row.getAllCells().map((cell) => {
           const column = cell.column;
+          const columnDef = column.columnDef as MRT_ColumnDef<TData>;
 
           if (column.id === 'id') return null;
-          if (!('accessorKey' in column.columnDef)) return null;  // skip display-only columns
+          if (!('accessorKey' in columnDef)) return null;  // skip display-only columns
 
-          const label = typeof column.columnDef.header === 'string'
-            ? column.columnDef.header
+          const label = typeof columnDef.header === 'string'
+            ? columnDef.header
             : column.id;
 
           return (
@@ -49,7 +63,7 @@ export const RecordView = <TData extends Record<string, any>>({ data, columns, t
                 {label}
               </Typography>
               <Typography variant='body1' component='div'>
-                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                {renderCell(cell)}
               </Typography>
             </Box>
           );
