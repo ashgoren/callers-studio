@@ -1,7 +1,7 @@
-import { useState } from 'react';
 import { useProgram, useCreateProgram, useUpdateProgram, useDeleteProgram } from '@/hooks/usePrograms';
 import { Spinner, ErrorMessage } from '@/components/shared';
 import { columns, newRecord } from './config';
+import { usePendingRelations } from '@/hooks/usePendingRelations';
 import { useDances } from '@/hooks/useDances';
 import { useAddDanceToProgram, useRemoveDanceFromProgram } from '@/hooks/useProgramsDances';
 import { RecordView } from '@/components/RecordView';
@@ -16,33 +16,44 @@ export const Program = ({ id }: { id?: number }) => {
   const { mode } = useDrawerState();
   const { setMode, closeDrawer } = useDrawerActions();
 
-  const [pendingAdds, setPendingAdds] = useState<{ danceId: number; order: number }[]>([]);
-  const [pendingRemoves, setPendingRemoves] = useState<number[]>([]);
-
-  const { data: dances } = useDances();
-  const { mutate: addDance } = useAddDanceToProgram();
-  const { mutate: removeDance } = useRemoveDanceFromProgram();
-
   const { mutateAsync: createProgram } = useCreateProgram();
   const { mutateAsync: updateProgram } = useUpdateProgram();
   const { mutateAsync: deleteProgram } = useDeleteProgram();
+  const { mutateAsync: addDance } = useAddDanceToProgram();
+  const { mutateAsync: removeDance } = useRemoveDanceFromProgram();
 
   const { data: program, isLoading, error } = useProgram(Number(id));
+  const { data: dances } = useDances();
+
+  const {
+    pendingAdds,
+    pendingRemoves,
+    addItem,
+    removeItem,
+    commitChanges,
+    reset,
+    hasPendingChanges
+  } = usePendingRelations<{ danceId: number; order: number }>({
+    getIdFromAdd: ({ danceId }) => danceId,
+  });
 
   const handleSave = async (updates: ProgramUpdate) => {
-    const { id: programId} = mode === 'create'
-      ? await createProgram(updates as ProgramInsert)
-      : await updateProgram({ id: program!.id, updates });
+    try {
+      const { id: programId} = mode === 'create'
+        ? await createProgram(updates as ProgramInsert)
+        : await updateProgram({ id: program!.id, updates });
 
-    await Promise.all([
-      ...pendingAdds.map(({ danceId, order }) => addDance({ programId, danceId, order })),
-      ...pendingRemoves.map(danceId => removeDance({ programId, danceId }))
-    ]);
+      await commitChanges(
+        ({danceId, order}) => addDance({ programId, danceId, order }),
+        (danceId) => removeDance({ programId, danceId })
+      );
+    } catch (err) {
+      console.error('Error saving program:', err);
+    }
   };
 
   const handleCancel = () => {
-    setPendingAdds([]);
-    setPendingRemoves([]);
+    reset();
     setMode('view');
   };
 
@@ -53,7 +64,7 @@ export const Program = ({ id }: { id?: number }) => {
         columns={columns}
         title={'New Program'}
         onSave={handleSave}
-        hasPendingRelationChanges={pendingAdds.length > 0 || pendingRemoves.length > 0}
+        hasPendingRelationChanges={hasPendingChanges}
         onCancel={() => closeDrawer()}
       >
         <ProgramDancesEditor
@@ -61,14 +72,8 @@ export const Program = ({ id }: { id?: number }) => {
           dances={dances ?? []}
           pendingAdds={pendingAdds}
           pendingRemoves={pendingRemoves}
-          onAdd={(danceId, order) => setPendingAdds((prev) => [...prev, { danceId, order }])}
-          onRemove={(danceId) => {
-            if (pendingAdds.find((pa) => pa.danceId === danceId)) {
-              setPendingAdds((prev) => prev.filter((pa) => pa.danceId !== danceId));
-            } else {
-              setPendingRemoves((prev) => [...prev, danceId]);
-            }
-          }}
+          onAdd={(danceId, order) => addItem({ danceId, order })}
+          onRemove={(danceId) => removeItem(danceId)}
         />
       </RecordEdit>
     );
@@ -85,7 +90,7 @@ export const Program = ({ id }: { id?: number }) => {
         columns={columns}
         title={`Edit Program: ${formatDate(program)}`}
         onSave={handleSave}
-        hasPendingRelationChanges={pendingAdds.length > 0 || pendingRemoves.length > 0}
+        hasPendingRelationChanges={hasPendingChanges}
         onCancel={handleCancel}
       >
         <ProgramDancesEditor
@@ -93,14 +98,8 @@ export const Program = ({ id }: { id?: number }) => {
           dances={dances ?? []}
           pendingAdds={pendingAdds}
           pendingRemoves={pendingRemoves}
-          onAdd={(danceId, order) => setPendingAdds((prev) => [...prev, { danceId, order }])}
-          onRemove={(danceId) => {
-            if (pendingAdds.find((pa) => pa.danceId === danceId)) {
-              setPendingAdds((prev) => prev.filter((pa) => pa.danceId !== danceId));
-            } else {
-              setPendingRemoves((prev) => [...prev, danceId]);
-            }
-          }}
+          onAdd={(danceId, order) => addItem({ danceId, order })}
+          onRemove={(danceId) => removeItem(danceId)}
         />
       </RecordEdit>
     );
