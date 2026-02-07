@@ -9,9 +9,11 @@ import type { DanceInsert, DanceUpdate } from '@/lib/types/database';
 
 export const Dance = ({ id }: { id?: number }) => {
   const { mode } = useDrawerState();
+
   const { mutateAsync: createDance } = useCreateDance();
   const { mutateAsync: updateDance } = useUpdateDance();
   const { mutateAsync: deleteDance } = useDeleteDance();
+
   const { data: dance, isLoading, error } = useDance(Number(id));
 
   if (mode === 'create') {

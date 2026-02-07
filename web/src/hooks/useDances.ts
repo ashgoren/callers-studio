@@ -7,7 +7,7 @@ export const useDances = () => {
   return useQuery({
     queryKey: ['dances'],
     queryFn: getDances,
-    select: ((data: Dance[]) => data.map(buildDancesColumn))
+    select: ((data: Dance[]) => data.map(buildRelationsColumns))
   });
 };
 
@@ -16,7 +16,7 @@ export const useDance = (id: number) => {
     queryKey: ['dance', id],
     queryFn: () => getDance(id),
     enabled: !!id,
-    select: (data: Dance) => buildDancesColumn(data)
+    select: (data: Dance) => buildRelationsColumns(data)
   })
 };
 
@@ -26,8 +26,8 @@ export const useUpdateDance = () => {
   return useMutation({
     mutationFn: ({ id, updates }: { id: number; updates: DanceUpdate }) =>
       updateDance(id, updates),
-    onSuccess: (updatedDance, variables) => {
-      queryClient.setQueryData(['dance', variables.id], updatedDance);
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['dance', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['dances'] });
       success('Dance updated');
     },
@@ -64,16 +64,24 @@ export const useDeleteDance = () => {
 
 // Helpers
 
-const buildDancesColumn = (dance: Dance) => {
-  const relations = dance.programs_dances ?? []
-  const sorted = relations.sort((a, b) => {
+const buildRelationsColumns = (dance: Dance) => {
+  const sortedPrograms = (dance.programs_dances ?? []).sort((a, b) => {
     const dateA = a.program?.date || '';
     const dateB = b.program?.date || '';
     return dateA.localeCompare(dateB);
   }).reverse();
-  return ({
-    ...dance,
-    programs_dances: sorted,
-    programNames: dance.programs_dances.map(pd => pd.program.location).join(', ')
+
+  const sortedChoreographers = (dance.dances_choreographers ?? []).sort((a, b) => {
+    const nameA = a.choreographer?.name || '';
+    const nameB = b.choreographer?.name || '';
+    return nameA.localeCompare(nameB);
   });
+
+  return {
+    ...dance,
+    programs_dances: sortedPrograms,
+    programNames: sortedPrograms.map(pd => pd.program.location).join(', '),
+    dances_choreographers: sortedChoreographers,
+    choreographerNames: sortedChoreographers.map(dc => dc.choreographer.name).join(', ')
+  };
 };

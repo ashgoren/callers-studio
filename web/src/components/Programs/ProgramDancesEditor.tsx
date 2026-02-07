@@ -9,7 +9,7 @@ type ProgramDanceEditorProps = {
   pendingAdds: { danceId: number; order: number }[];
   pendingRemoves: number[];
   dances: Dance[];
-  onAdd: (danceId: number, order: number) => void;
+  onAdd: (item: { danceId: number; order: number }) => void;
   onRemove: (danceId: number) => void;
 };
 
@@ -22,7 +22,7 @@ export const ProgramDancesEditor = ({ programDances, dances, pendingAdds, pendin
 
   const handleAdd = () => {
     if (!selectedDance || order === '') return;
-    onAdd(selectedDance.id, Number(order));
+    onAdd({ danceId: selectedDance.id, order: Number(order) });
     setSelectedDance(null);
     setOrder('');
   };
@@ -30,7 +30,7 @@ export const ProgramDancesEditor = ({ programDances, dances, pendingAdds, pendin
   const handleDanceSelect = (dance: Dance | null) => {
     setSelectedDance(dance);
     if (dance && order !== '') {
-      onAdd(dance.id, Number(order));
+      onAdd({ danceId: dance.id, order: Number(order) });
       setSelectedDance(null);
       setOrder('');
     }
@@ -38,7 +38,7 @@ export const ProgramDancesEditor = ({ programDances, dances, pendingAdds, pendin
 
   const handleOrderChange = () => {
     if (selectedDance && order !== '') {
-      onAdd(selectedDance.id, Number(order));
+      onAdd({ danceId: selectedDance.id, order: Number(order) });
       setSelectedDance(null);
       setOrder('');
     }

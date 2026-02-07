@@ -60,8 +60,8 @@ export const Program = ({ id }: { id?: number }) => {
           dances={dances ?? []}
           pendingAdds={pendingAdds}
           pendingRemoves={pendingRemoves}
-          onAdd={(danceId, order) => addItem({ danceId, order })}
-          onRemove={(danceId) => removeItem(danceId)}
+          onAdd={addItem}
+          onRemove={removeItem}
         />
       </RecordEdit>
     );
@@ -85,8 +85,8 @@ export const Program = ({ id }: { id?: number }) => {
           dances={dances ?? []}
           pendingAdds={pendingAdds}
           pendingRemoves={pendingRemoves}
-          onAdd={(danceId, order) => addItem({ danceId, order })}
-          onRemove={(danceId) => removeItem(danceId)}
+          onAdd={addItem}
+          onRemove={removeItem}
         />
       </RecordEdit>
     );

@@ -25,6 +25,7 @@ export const getProgram = async (id: number) => {
   return data as Program;
 };
 
+// id of return used by handleSave in Program.tsx
 export const updateProgram = async (id: number, updates: ProgramUpdate) => {
   const { data, error } = await supabase
     .from('programs')

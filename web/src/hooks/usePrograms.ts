@@ -26,8 +26,8 @@ export const useUpdateProgram = () => {
   return useMutation({
     mutationFn: ({ id, updates }: { id: number; updates: ProgramUpdate }) =>
       updateProgram(id, updates),
-    onSuccess: (updatedProgram, variables) => {
-      queryClient.setQueryData(['program', variables.id], updatedProgram);
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['program', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['programs'] });
       success('Program updated');
     },

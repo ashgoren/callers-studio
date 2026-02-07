@@ -34,6 +34,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      choreographers: {
+        Row: {
+          created_at: string
+          id: number
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          name?: string
+        }
+        Relationships: []
+      }
       dances: {
         Row: {
           choreographer: string | null
@@ -75,6 +93,42 @@ export type Database = {
           video?: string | null
         }
         Relationships: []
+      }
+      dances_choreographers: {
+        Row: {
+          choreographer_id: number | null
+          created_at: string
+          dance_id: number | null
+          id: number
+        }
+        Insert: {
+          choreographer_id?: number | null
+          created_at?: string
+          dance_id?: number | null
+          id?: number
+        }
+        Update: {
+          choreographer_id?: number | null
+          created_at?: string
+          dance_id?: number | null
+          id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dances_choreographers_choreographer_id_fkey"
+            columns: ["choreographer_id"]
+            isOneToOne: false
+            referencedRelation: "choreographers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dances_choreographers_dance_id_fkey"
+            columns: ["dance_id"]
+            isOneToOne: false
+            referencedRelation: "dances"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       programs: {
         Row: {
