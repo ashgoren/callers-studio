@@ -26,7 +26,6 @@ export const DrawerProvider = ({ children }: { children: ReactNode }) => {
     isOpen: false, model: null, id: null, mode: 'view'
   });
 
-  console.log('Drawer state:', state);
   const actions = useMemo(() => ({
     openDrawer: (model: Model, id: number) => {
       setState(prev => {

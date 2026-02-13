@@ -110,20 +110,28 @@ export const UndoProvider = ({ children }: { children: ReactNode }) => {
     const action = undoStack.at(-1);
     if (!action) return;
 
-    const undoOps = invertOps(action.ops);
-    await executeOps(undoOps);
-    setUndoStack(prev => prev.slice(0, -1));
-    setRedoStack(prev => [...prev, { label: action.label, ops: undoOps }]);
+    try {
+      const undoOps = invertOps(action.ops);
+      await executeOps(undoOps);
+      setUndoStack(prev => prev.slice(0, -1));
+      setRedoStack(prev => [...prev, { label: action.label, ops: undoOps }]);
+    } catch (e) {
+      console.error('Undo failed:', e);
+    }
   }, [undoStack]);
 
   const redo = useCallback(async () => {
     const action = redoStack.at(-1);
     if (!action) return;
 
-    const redoOps = invertOps(action.ops);
-    await executeOps(redoOps);
-    setRedoStack(prev => prev.slice(0, -1));
-    setUndoStack(prev => [...prev, { label: action.label, ops: redoOps }]);
+    try {
+      const redoOps = invertOps(action.ops);
+      await executeOps(redoOps);
+      setRedoStack(prev => prev.slice(0, -1));
+      setUndoStack(prev => [...prev, { label: action.label, ops: redoOps }]);
+    } catch (e) {
+      console.error('Redo failed:', e);
+    }
   }, [redoStack]);
 
   const actions = useMemo(() => ({ pushAction, undo, redo }), [pushAction, undo, redo]);

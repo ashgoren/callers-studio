@@ -27,6 +27,8 @@ export const Dance = ({ id }: { id?: number }) => {
   const pending = usePendingRelations();
   const { pushAction } = useUndoActions();
 
+  const dbKeys = new Set(['id', 'created_at', ...Object.keys(newRecord)]);
+
   const handleSave = async (updates: DanceUpdate) => {
     const { id: danceId } = mode === 'create'
       ? await createDance(updates as DanceInsert)
@@ -50,8 +52,12 @@ export const Dance = ({ id }: { id?: number }) => {
     }
 
     if (mode === 'edit') {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { programs_dances, dances_choreographers, ...before } = dance!;
+      const before = Object.fromEntries(
+        Object.keys(updates)
+          .filter(key => dbKeys.has(key))
+          .map(key => [key, dance![key as keyof DanceType]])
+      );
+
       pushAction({
         label: `Edit Dance: ${updates.title}`,
         ops: [
@@ -69,19 +75,22 @@ export const Dance = ({ id }: { id?: number }) => {
 
   const handleDelete = async () => {
     if (!dance) return;
-    const { programs_dances, dances_choreographers, ...danceRecord } = dance;
+    const danceRecord = Object.fromEntries(
+      Object.entries(dance).filter(([key]) => dbKeys.has(key))
+    );
+
     await deleteDance({ id: dance.id });
     pushAction({
       label: `Delete Dance: ${dance.title}`,
       ops: [
         { type: 'delete' as const, table: 'dances', id: dance.id, record: danceRecord },
-        ...dances_choreographers.map(dc => ({
+        ...dance.dances_choreographers.map(dc => ({
           type: 'delete' as const,
           table: 'dances_choreographers',
           id: dc.id,
           record: { id: dc.id, dance_id: dance.id, choreographer_id: dc.choreographer.id }
         })),
-        ...programs_dances.map(pd => ({
+        ...dance.programs_dances.map(pd => ({
           type: 'delete' as const,
           table: 'programs_dances',
           id: pd.id,
