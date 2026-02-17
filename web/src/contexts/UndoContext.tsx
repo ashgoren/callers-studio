@@ -1,7 +1,9 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useCallback, useState, useMemo, type ReactNode } from 'react';
+import { createContext, useContext, useCallback, useState, useMemo, useEffect, useRef, type ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 import { queryClient } from '@/lib/react-query';
+import { closeSnackbar } from 'notistack';
+import { useDrawerActions } from '@/contexts/DrawerContext';
 
 type UndoOp =
   | { type: 'insert'; table: string; record: Record<string, unknown> }
@@ -61,11 +63,8 @@ function sortOps(ops: UndoOp[]): UndoOp[] {
 
 async function executeOps(ops: UndoOp[]) {
   const sorted = sortOps(ops);
-  const tablesToInvalidate = new Set<string>();
 
   for (const op of sorted) {
-    tablesToInvalidate.add(op.table);
-
     switch (op.type) {
       case 'insert': {
         const { error } = await supabase.from(op.table).insert(op.record);
@@ -85,14 +84,25 @@ async function executeOps(ops: UndoOp[]) {
     }
   }
 
-  for (const table of tablesToInvalidate) {
-    queryClient.invalidateQueries({ queryKey: [table] });
-  }
+  // Invalidate all queries since we don't have enough info to target just relation tables
+  queryClient.invalidateQueries();
 }
 
 export const UndoProvider = ({ children }: { children: ReactNode }) => {
+  const { closeDrawer } = useDrawerActions();
+
   const [undoStack, setUndoStack] = useState<UndoAction[]>([]);
   const [redoStack, setRedoStack] = useState<UndoAction[]>([]);
+  const undoStackRef = useRef(undoStack);
+  const redoStackRef = useRef(redoStack);
+  const closeDrawerRef = useRef(closeDrawer);
+
+  useEffect(() => { undoStackRef.current = undoStack; }, [undoStack]);
+  useEffect(() => { redoStackRef.current = redoStack; }, [redoStack]);
+  useEffect(() => { closeDrawerRef.current = closeDrawer; }, [closeDrawer]);
+
+  // console.log(`Undo Stack (${undoStack.length}): ${undoStack.map(a => a.label)}`);
+  // console.log(`Redo Stack (${redoStack.length}): ${redoStack.map(a => a.label)}`);
 
   const state: UndoState = useMemo(() => ({
     canUndo: undoStack.length > 0,
@@ -107,7 +117,7 @@ export const UndoProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const undo = useCallback(async () => {
-    const action = undoStack.at(-1);
+    const action = undoStackRef.current.at(-1);
     if (!action) return;
 
     try {
@@ -115,13 +125,17 @@ export const UndoProvider = ({ children }: { children: ReactNode }) => {
       await executeOps(undoOps);
       setUndoStack(prev => prev.slice(0, -1));
       setRedoStack(prev => [...prev, { label: action.label, ops: undoOps }]);
+      closeSnackbar();
+      if (undoOps.some(op => op.type === 'delete' && !isDependent(op))) {
+        closeDrawerRef.current();
+      }
     } catch (e) {
       console.error('Undo failed:', e);
     }
-  }, [undoStack]);
+  }, []);
 
   const redo = useCallback(async () => {
-    const action = redoStack.at(-1);
+    const action = redoStackRef.current.at(-1);
     if (!action) return;
 
     try {
@@ -129,10 +143,14 @@ export const UndoProvider = ({ children }: { children: ReactNode }) => {
       await executeOps(redoOps);
       setRedoStack(prev => prev.slice(0, -1));
       setUndoStack(prev => [...prev, { label: action.label, ops: redoOps }]);
+      closeSnackbar();
+      if (redoOps.some(op => op.type === 'delete' && !isDependent(op))) {
+        closeDrawerRef.current();
+      }
     } catch (e) {
       console.error('Redo failed:', e);
     }
-  }, [redoStack]);
+  }, []);
 
   const actions = useMemo(() => ({ pushAction, undo, redo }), [pushAction, undo, redo]);
 
@@ -156,3 +174,40 @@ export const useUndoActions = () => {
   if (!context) throw new Error('useUndoActions must be used within UndoProvider');
   return context;
 };
+
+
+// Helpers for building undo ops at call sites
+
+export function dbRecord<T extends object>(
+  record: T,
+  configRecord: Record<string, unknown>
+): Record<string, unknown> {
+  const keys = new Set(['id', 'created_at', ...Object.keys(configRecord)]);
+  return Object.fromEntries(
+    Object.entries(record).filter(([key]) => keys.has(key))
+  );
+}
+
+export function beforeValues<T extends object>(
+  current: T,
+  updates: Record<string, unknown>,
+  configRecord: Record<string, unknown>
+): Record<string, unknown> {
+  const keys = new Set(['id', 'created_at', ...Object.keys(configRecord)]);
+  return Object.fromEntries(
+    Object.keys(updates)
+      .filter(key => keys.has(key))
+      .map(key => [key, (current as Record<string, unknown>)[key]])
+  );
+}
+
+export function relationOps(
+  table: string,
+  added: Record<string, unknown>[],
+  removed: ({ id: number } & Record<string, unknown>)[]
+): UndoOp[] {
+  return [
+    ...added.map((record): UndoOp => ({ type: 'insert', table, record })),
+    ...removed.map((record): UndoOp => ({ type: 'delete', table, id: record.id, record })),
+  ];
+}

@@ -21,7 +21,7 @@ export const useDance = (id: number) => {
 };
 
 export const useUpdateDance = () => {
-  const { success, error } = useNotify();
+  const { toastError } = useNotify();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, updates }: { id: number; updates: DanceUpdate }) =>
@@ -33,27 +33,25 @@ export const useUpdateDance = () => {
       queryClient.invalidateQueries({ queryKey: ['program'] });
       queryClient.invalidateQueries({ queryKey: ['choreographers'] });
       queryClient.invalidateQueries({ queryKey: ['choreographer'] });
-      success('Dance updated');
     },
-    onError: (err: Error) => error(err.message || 'Error updating dance')
+    onError: (err: Error) => toastError(err.message || 'Error updating dance')
   });
 };
 
 export const useCreateDance = () => {
-  const { success, error } = useNotify();
+  const { toastError } = useNotify();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (newDance: DanceInsert) => createDance(newDance),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dances'] });
-      success('Dance created');
     },
-    onError: (err: Error) => error(err.message || 'Error creating dance')
+    onError: (err: Error) => toastError(err.message || 'Error creating dance')
   });
 };
 
 export const useDeleteDance = () => {
-  const { info, error } = useNotify();
+  const { toastError } = useNotify();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id }: { id: number }) => deleteDance(id),
@@ -63,9 +61,8 @@ export const useDeleteDance = () => {
       queryClient.invalidateQueries({ queryKey: ['program'] });
       queryClient.invalidateQueries({ queryKey: ['choreographers'] });
       queryClient.invalidateQueries({ queryKey: ['choreographer'] });
-      info('Dance deleted');
     },
-    onError: (err: Error) => error(err.message || 'Error deleting dance')
+    onError: (err: Error) => toastError(err.message || 'Error deleting dance')
   });
 };
 

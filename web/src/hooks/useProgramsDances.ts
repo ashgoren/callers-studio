@@ -30,7 +30,7 @@ export const useRemoveDanceFromProgram = () => {
       queryClient.invalidateQueries({ queryKey: ['programs'] });
       queryClient.invalidateQueries({ queryKey: ['dance', danceId] });
       queryClient.invalidateQueries({ queryKey: ['dances'] });
-      // info('Dance removed from program');
+      // success('Dance removed from program');
     },
     onError: (err: Error) => error(err.message || 'Error removing dance from program')
   });

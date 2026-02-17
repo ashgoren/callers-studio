@@ -1,3 +1,4 @@
+import { useNotify } from '@/hooks/useNotify';
 import { useDance, useCreateDance, useUpdateDance, useDeleteDance } from '@/hooks/useDances';
 import { useAddChoreographerToDance, useRemoveChoreographerFromDance } from '@/hooks/useDancesChoreographers';
 import { useChoreographers } from '@/hooks/useChoreographers';
@@ -9,11 +10,12 @@ import { RecordView } from '@/components/RecordView';
 import { RecordEdit } from '@/components/RecordEdit';
 import { RelationList } from '@/components/RelationList';
 import { useDrawerState } from '@/contexts/DrawerContext';
-import { useUndoActions } from '@/contexts/UndoContext';
+import { useUndoActions, dbRecord, beforeValues, relationOps } from '@/contexts/UndoContext';
 import type { DanceInsert, DanceUpdate, Dance as DanceType } from '@/lib/types/database';
 
 export const Dance = ({ id }: { id?: number }) => {
   const { mode } = useDrawerState();
+  const { toastSuccess } = useNotify();
 
   const { mutateAsync: createDance } = useCreateDance();
   const { mutateAsync: updateDance } = useUpdateDance();
@@ -26,8 +28,6 @@ export const Dance = ({ id }: { id?: number }) => {
 
   const pending = usePendingRelations();
   const { pushAction } = useUndoActions();
-
-  const dbKeys = new Set(['id', 'created_at', ...Object.keys(newRecord)]);
 
   const handleSave = async (updates: DanceUpdate) => {
     const { id: danceId } = mode === 'create'
@@ -43,61 +43,53 @@ export const Dance = ({ id }: { id?: number }) => {
       pushAction({
         label: `Create Dance: ${updates.title}`,
         ops: [
-          { type: 'insert', table: 'dances', record: { id: danceId, ...updates } },
-          ...added.map(row => (
-            { type: 'insert' as const, table: 'dances_choreographers', record: row }
-           ))
+          {
+            type: 'insert',
+            table: 'dances',
+            record: { id: danceId, ...updates }
+          },
+          ...relationOps('dances_choreographers', added, [])
         ]
       });
+      toastSuccess('Dance created');
     }
 
     if (mode === 'edit') {
-      const before = Object.fromEntries(
-        Object.keys(updates)
-          .filter(key => dbKeys.has(key))
-          .map(key => [key, dance![key as keyof DanceType]])
-      );
-
       pushAction({
         label: `Edit Dance: ${updates.title}`,
         ops: [
-          { type: 'update', table: 'dances', id: danceId, before, after: updates },
-          ...added.map(row => (
-            { type: 'insert' as const, table: 'dances_choreographers', record: row }
-          )),
-          ...removed.map(row => (
-            { type: 'delete' as const, table: 'dances_choreographers', id: row.id, record: row }
-          ))
+          {
+            type: 'update',
+            table: 'dances',
+            id: danceId,
+            before: beforeValues(dance!, updates, newRecord),
+            after: dbRecord(updates, newRecord)
+          },
+          ...relationOps('dances_choreographers', added, removed)
         ]
       });
+      toastSuccess('Dance updated');
     }
   };
 
   const handleDelete = async () => {
     if (!dance) return;
-    const danceRecord = Object.fromEntries(
-      Object.entries(dance).filter(([key]) => dbKeys.has(key))
-    );
-
     await deleteDance({ id: dance.id });
     pushAction({
       label: `Delete Dance: ${dance.title}`,
       ops: [
-        { type: 'delete' as const, table: 'dances', id: dance.id, record: danceRecord },
-        ...dance.dances_choreographers.map(dc => ({
-          type: 'delete' as const,
-          table: 'dances_choreographers',
-          id: dc.id,
-          record: { id: dc.id, dance_id: dance.id, choreographer_id: dc.choreographer.id }
-        })),
-        ...dance.programs_dances.map(pd => ({
-          type: 'delete' as const,
-          table: 'programs_dances',
-          id: pd.id,
-          record: { id: pd.id, dance_id: dance.id, program_id: pd.program.id, order: pd.order }
-        }))
+        { type: 'delete', table: 'dances', id: dance.id, record: dbRecord(dance, newRecord) },
+        ...relationOps('dances_choreographers', [],
+          dance.dances_choreographers.map(dc => ({
+            id: dc.id, dance_id: dance.id, choreographer_id: dc.choreographer.id
+          }))),
+        ...relationOps('programs_dances', [],
+          dance.programs_dances.map(pd => ({
+            id: pd.id, dance_id: dance.id, program_id: pd.program.id, order: pd.order
+          })))
       ]
     });
+    toastSuccess('Dance deleted');
   };
 
   if (mode === 'create') {

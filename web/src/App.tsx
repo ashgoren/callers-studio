@@ -20,9 +20,9 @@ function App() {
       <LocalizationProvider dateAdapter={AdapterDateFns}>
         <DndProvider backend={HTML5Backend}>
           <QueryClientProvider client={queryClient}>
-            <UndoProvider>
-              <TitleProvider>
-                <DrawerProvider>
+            <DrawerProvider>
+              <UndoProvider>
+                <TitleProvider>
                   <Layout>
                     <Routes>
                       <Route path='/' element={<Home />} />
@@ -31,9 +31,9 @@ function App() {
                       <Route path='/choreographers' element={<Choreographers />} />
                     </Routes>
                   </Layout>
-                </DrawerProvider>
-              </TitleProvider>
-            </UndoProvider>
+                </TitleProvider>
+              </UndoProvider>
+            </DrawerProvider>
           </QueryClientProvider>
         </DndProvider>
       </LocalizationProvider>

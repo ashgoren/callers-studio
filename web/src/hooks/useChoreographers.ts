@@ -51,7 +51,7 @@ export const useUpdateChoreographer = () => {
 };
 
 export const useDeleteChoreographer = () => {
-  const { info, error } = useNotify();
+  const { success, error } = useNotify();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id }: { id: number }) => deleteChoreographer(id),
@@ -59,7 +59,7 @@ export const useDeleteChoreographer = () => {
       queryClient.invalidateQueries({ queryKey: ['choreographers'] });
       queryClient.invalidateQueries({ queryKey: ['dances'] });
       queryClient.invalidateQueries({ queryKey: ['dance'] });
-      info('Choreographer deleted');
+      success('Choreographer deleted');
     },
     onError: (err: Error) => error(err.message || 'Error deleting choreographer')
   });

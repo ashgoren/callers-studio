@@ -51,7 +51,7 @@ export const useCreateProgram = () => {
 };
 
 export const useDeleteProgram = () => {
-  const { info, error } = useNotify();
+  const { success, error } = useNotify();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id }: { id: number }) => deleteProgram(id),
@@ -59,7 +59,7 @@ export const useDeleteProgram = () => {
       queryClient.invalidateQueries({ queryKey: ['programs'] });
       queryClient.invalidateQueries({ queryKey: ['dances'] });
       queryClient.invalidateQueries({ queryKey: ['dance'] });
-      info('Program deleted');
+      success('Program deleted');
     },
     onError: (err: Error) => error(err.message || 'Error deleting program')
   });

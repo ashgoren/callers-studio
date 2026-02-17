@@ -30,7 +30,7 @@ export const useRemoveChoreographerFromDance = () => {
       queryClient.invalidateQueries({ queryKey: ['dances'] });
       queryClient.invalidateQueries({ queryKey: ['choreographers'] });
       queryClient.invalidateQueries({ queryKey: ['choreographer'] });
-      // info('Choreographer removed from dance');
+      // success('Choreographer removed from dance');
     },
     onError: (err: Error) => error(err.message || 'Error removing choreographer from dance')
   });
