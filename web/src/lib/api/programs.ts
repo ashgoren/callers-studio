@@ -4,7 +4,7 @@ import type { Program, ProgramInsert, ProgramUpdate } from '@/lib/types/database
 export const getPrograms = async () => {
   const { data, error } = await supabase
     .from('programs')
-    .select('*, programs_dances(order, dance:dances(*))')
+    .select('*, programs_dances(id, order, dance:dances(*))')
     .order('order', { referencedTable: 'programs_dances', ascending: true });
 
   if (error) {
@@ -17,7 +17,7 @@ export const getPrograms = async () => {
 export const getProgram = async (id: number) => {
   const { data, error } = await supabase
     .from('programs')
-    .select('*, programs_dances(order, dance:dances(*))')
+    .select('*, programs_dances(id, order, dance:dances(*))')
     .eq('id', id)
     .single();
 
@@ -31,7 +31,7 @@ export const updateProgram = async (id: number, updates: ProgramUpdate) => {
     .from('programs')
     .update(updates)
     .eq('id', id)
-    .select('*, programs_dances(order, dance:dances(*))')
+    .select('*, programs_dances(id, order, dance:dances(*))')
     .single();
 
   if (error) throw new Error(error.message);
@@ -42,7 +42,7 @@ export const createProgram = async (newProgram: ProgramInsert) => {
   const { data, error } = await supabase
     .from('programs')
     .insert(newProgram)
-    .select('*, programs_dances(order, dance:dances(*))')
+    .select('*, programs_dances(id, order, dance:dances(*))')
     .single();
 
   if (error) throw new Error(error.message);

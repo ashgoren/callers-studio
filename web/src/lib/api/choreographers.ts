@@ -4,7 +4,7 @@ import type { Choreographer, ChoreographerInsert, ChoreographerUpdate } from '@/
 export const getChoreographers = async () => {
   const { data, error } = await supabase
     .from('choreographers')
-    .select('*, dances_choreographers(dance:dances(*))')
+    .select('*, dances_choreographers(id, dance:dances(*))')
     .order('name', { ascending: true });
 
   if (error) {
@@ -17,7 +17,7 @@ export const getChoreographers = async () => {
 export const getChoreographer = async (id: number) => {
   const { data, error } = await supabase
     .from('choreographers')
-    .select('*, dances_choreographers(dance:dances(*))')
+    .select('*, dances_choreographers(id, dance:dances(*))')
     .eq('id', id)
     .single();
 
@@ -30,7 +30,7 @@ export const updateChoreographer = async (id: number, updates: ChoreographerUpda
     .from('choreographers')
     .update(updates)
     .eq('id', id)
-    .select('*, dances_choreographers(dance:dances(*))')
+    .select('*, dances_choreographers(id, dance:dances(*))')
     .single();
 
   if (error) throw new Error(error.message);
@@ -41,7 +41,7 @@ export const createChoreographer = async (newChoreographer: ChoreographerInsert)
   const { data, error } = await supabase
     .from('choreographers')
     .insert(newChoreographer)
-    .select('*, dances_choreographers(dance:dances(*))')
+    .select('*, dances_choreographers(id, dance:dances(*))')
     .single();
 
   if (error) throw new Error(error.message);

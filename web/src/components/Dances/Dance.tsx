@@ -15,6 +15,7 @@ import type { DanceInsert, DanceUpdate, Dance as DanceType } from '@/lib/types/d
 
 export const Dance = ({ id }: { id?: number }) => {
   const { mode } = useDrawerState();
+  const { pushAction } = useUndoActions();
   const { toastSuccess } = useNotify();
 
   const { mutateAsync: createDance } = useCreateDance();
@@ -27,7 +28,6 @@ export const Dance = ({ id }: { id?: number }) => {
   const { data: choreographers } = useChoreographers();
 
   const pending = usePendingRelations();
-  const { pushAction } = useUndoActions();
 
   const handleSave = async (updates: DanceUpdate) => {
     const { id: danceId } = mode === 'create'

@@ -16,11 +16,11 @@ export type DanceInsert = Tables['dances']['Insert'];
 export type DanceUpdate = Tables['dances']['Update'];
 
 export type ProgramRow = Tables['programs']['Row'];
-export type Program = ProgramRow & { programs_dances: { order: number; dance: DanceRow }[] };
+export type Program = ProgramRow & { programs_dances: { id: number; order: number; dance: DanceRow }[] };
 export type ProgramInsert = Tables['programs']['Insert'];
 export type ProgramUpdate = Tables['programs']['Update'];
 
 export type ChoreographerRow = Tables['choreographers']['Row'];
-export type Choreographer = ChoreographerRow & { dances_choreographers: { dance: DanceRow }[] };
+export type Choreographer = ChoreographerRow & { dances_choreographers: { id: number; dance: DanceRow }[] };
 export type ChoreographerInsert = Tables['choreographers']['Insert'];
 export type ChoreographerUpdate = Tables['choreographers']['Update'];

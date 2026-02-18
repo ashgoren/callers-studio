@@ -6,23 +6,25 @@ import type { Program, Dance } from '@/lib/types/database';
 
 type ProgramDanceEditorProps = {
   programDances: Program['programs_dances'];
-  pendingAdds: { danceId: number; order: number }[];
-  pendingRemoves: number[];
   dances: Dance[];
-  onAdd: (item: { danceId: number; order: number }) => void;
-  onRemove: (danceId: number) => void;
+  pending: {
+    pendingAdds: { danceId: number; order: number }[]
+    pendingRemoves: number[];
+    addItem: (item: { danceId: number; order: number }) => void;
+    removeItem: (danceId: number) => void;
+  };
 };
 
-export const ProgramDancesEditor = ({ programDances, dances, pendingAdds, pendingRemoves, onAdd, onRemove }: ProgramDanceEditorProps) => {
+export const ProgramDancesEditor = ({ programDances, dances, pending }: ProgramDanceEditorProps) => {
   const [selectedDance, setSelectedDance] = useState<Dance | null>(null);
   const [order, setOrder] = useState<number | ''>('');
 
-  const displayedRelations = computeDisplayedRelations({ programDances, dances, pendingAdds, pendingRemoves });
-  const availableOptions = computeAvailableOptions({ programDances, dances, pendingAdds, pendingRemoves });
+  const displayedRelations = computeDisplayedRelations({ programDances, dances, pending });
+  const availableOptions = computeAvailableOptions({ programDances, dances, pending });
 
   const handleAdd = () => {
     if (!selectedDance || order === '') return;
-    onAdd({ danceId: selectedDance.id, order: Number(order) });
+    pending.addItem({ danceId: selectedDance.id, order: Number(order) });
     setSelectedDance(null);
     setOrder('');
   };
@@ -30,7 +32,7 @@ export const ProgramDancesEditor = ({ programDances, dances, pendingAdds, pendin
   const handleDanceSelect = (dance: Dance | null) => {
     setSelectedDance(dance);
     if (dance && order !== '') {
-      onAdd({ danceId: dance.id, order: Number(order) });
+      pending.addItem({ danceId: dance.id, order: Number(order) });
       setSelectedDance(null);
       setOrder('');
     }
@@ -38,7 +40,7 @@ export const ProgramDancesEditor = ({ programDances, dances, pendingAdds, pendin
 
   const handleOrderChange = () => {
     if (selectedDance && order !== '') {
-      onAdd({ danceId: selectedDance.id, order: Number(order) });
+      pending.addItem({ danceId: selectedDance.id, order: Number(order) });
       setSelectedDance(null);
       setOrder('');
     }
@@ -59,7 +61,7 @@ export const ProgramDancesEditor = ({ programDances, dances, pendingAdds, pendin
               '&:not(:last-child)': { borderBottom: '1px solid', borderColor: 'divider' },
             }}
             secondaryAction={
-              <IconButton edge='end' size='small' onClick={() => onRemove(pd.danceId)}>
+              <IconButton edge='end' size='small' onClick={() => pending.removeItem(pd.danceId)}>
                 <RemoveCircleOutlineIcon fontSize='small' />
               </IconButton>
             }
@@ -98,17 +100,19 @@ export const ProgramDancesEditor = ({ programDances, dances, pendingAdds, pendin
   );
 };
 
-const computeDisplayedRelations = ({ programDances, dances, pendingAdds, pendingRemoves }: {
+const computeDisplayedRelations = ({ programDances, dances, pending }: {
   programDances: Program['programs_dances'],
   dances: Dance[],
-  pendingAdds: { danceId: number; order: number }[],
-  pendingRemoves: number[]
+  pending: {
+    pendingAdds: { danceId: number; order: number }[],
+    pendingRemoves: number[]
+  }
 }) => {
   const withoutRemovedDances = programDances
-    .filter(pd => !pendingRemoves.includes(pd.dance.id))
+    .filter(pd => !pending.pendingRemoves.includes(pd.dance.id))
     .map(pd => ({ danceId: pd.dance.id, order: pd.order, title: pd.dance.title, isPending: false }));
 
-  const addedDances = pendingAdds.map(({ danceId, order }) => {
+  const addedDances = pending.pendingAdds.map(({ danceId, order }) => {
     const dance = dances.find(d => d.id === danceId);
     return { danceId, order, title: dance?.title ?? '?', isPending: true };
   });
@@ -117,17 +121,19 @@ const computeDisplayedRelations = ({ programDances, dances, pendingAdds, pending
     .sort((a, b) => a.order - b.order);
 };
 
-const computeAvailableOptions = ({ programDances, dances, pendingAdds, pendingRemoves }: {
+const computeAvailableOptions = ({ programDances, dances, pending }: {
   programDances: Program['programs_dances'],
   dances: Dance[],
-  pendingAdds: { danceId: number; order: number }[],
-  pendingRemoves: number[]
+  pending: {
+    pendingAdds: { danceId: number; order: number }[],
+    pendingRemoves: number[]
+  }
 }) => {
   const linkedIds = new Set(
     programDances
       .map(pd => pd.dance.id)
-      .filter(id => !pendingRemoves.includes(id))
-      .concat(pendingAdds.map(pa => pa.danceId))
+      .filter(id => !pending.pendingRemoves.includes(id))
+      .concat(pending.pendingAdds.map(pa => pa.danceId))
   );
 
   return (dances ?? [])

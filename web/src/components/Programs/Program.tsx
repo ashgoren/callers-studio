@@ -1,3 +1,4 @@
+import { useNotify } from '@/hooks/useNotify';
 import { useProgram, useCreateProgram, useUpdateProgram, useDeleteProgram } from '@/hooks/usePrograms';
 import { Spinner, ErrorMessage } from '@/components/shared';
 import { columns, newRecord } from './config';
@@ -9,11 +10,14 @@ import { RecordEdit } from '@/components/RecordEdit';
 import { RelationList } from '@/components/RelationList';
 import { ProgramDancesEditor } from './ProgramDancesEditor';
 import { useDrawerState } from '@/contexts/DrawerContext';
+import { useUndoActions, dbRecord, beforeValues, relationOps } from '@/contexts/UndoContext';
 import { formatLocalDate } from '@/lib/utils';
 import type { ProgramInsert, ProgramUpdate } from '@/lib/types/database';
 
 export const Program = ({ id }: { id?: number }) => {
   const { mode } = useDrawerState();
+  const { pushAction } = useUndoActions();
+  const { toastSuccess } = useNotify();
 
   const { mutateAsync: createProgram } = useCreateProgram();
   const { mutateAsync: updateProgram } = useUpdateProgram();
@@ -24,14 +28,7 @@ export const Program = ({ id }: { id?: number }) => {
   const { data: program, isLoading, error } = useProgram(Number(id));
   const { data: dances } = useDances();
 
-  const {
-    pendingAdds,
-    pendingRemoves,
-    addItem,
-    removeItem,
-    commitChanges,
-    hasPendingChanges
-  } = usePendingRelations<{ danceId: number; order: number }>({
+  const pending = usePendingRelations<{ danceId: number; order: number }>({
     getId: ({ danceId }) => danceId,
   });
 
@@ -40,10 +37,64 @@ export const Program = ({ id }: { id?: number }) => {
       ? await createProgram(updates as ProgramInsert)
       : await updateProgram({ id: program!.id, updates });
 
-    await commitChanges(
+    const { added, removed } = await pending.commitChanges(
       ({danceId, order}) => addDance({ programId, danceId, order }),
       (danceId) => removeDance({ programId, danceId })
     );
+
+    if (mode === 'create') {
+      pushAction({
+        label: `Create Program: ${formatDate(updates)}`,
+        ops: [
+          {
+            type: 'insert',
+            table: 'programs',
+            record: { id: programId, ...updates }
+          },
+          ...relationOps('programs_dances', added, [])
+        ]
+      });
+      toastSuccess('Program created');
+    }
+
+    if (mode === 'edit') {
+      pushAction({
+        label: `Edit Program: ${formatDate(updates)}`,
+        ops: [
+          {
+            type: 'update',
+            table: 'programs',
+            id: programId,
+            before: beforeValues(program!, updates, newRecord),
+            after: dbRecord(updates, newRecord)
+          },
+          ...relationOps('programs_dances', added, removed)
+        ]
+      });
+      toastSuccess('Program updated');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!program) return;
+    await deleteProgram({ id: program.id });
+    pushAction({
+      label: `Delete Program: ${formatDate(program)}`,
+      ops: [
+        {
+          type: 'delete',
+          table: 'programs',
+          id: program.id,
+          record: dbRecord(program, newRecord)
+        },
+        ...relationOps(
+          'programs_dances',
+          [],
+          program.programs_dances.map(pd => ({ id: pd.id, program_id: program.id, dance_id: pd.dance.id, order: pd.order }))
+        )
+      ]
+    });
+    toastSuccess('Program deleted');
   };
 
   if (mode === 'create') {
@@ -53,15 +104,12 @@ export const Program = ({ id }: { id?: number }) => {
         columns={columns}
         title={'New Program'}
         onSave={handleSave}
-        hasPendingRelationChanges={hasPendingChanges}
+        hasPendingRelationChanges={pending.hasPendingChanges}
       >
         <ProgramDancesEditor
           programDances={[]}
           dances={dances ?? []}
-          pendingAdds={pendingAdds}
-          pendingRemoves={pendingRemoves}
-          onAdd={addItem}
-          onRemove={removeItem}
+          pending={pending}
         />
       </RecordEdit>
     );
@@ -78,15 +126,12 @@ export const Program = ({ id }: { id?: number }) => {
         columns={columns}
         title={`Edit Program: ${formatDate(program)}`}
         onSave={handleSave}
-        hasPendingRelationChanges={hasPendingChanges}
+        hasPendingRelationChanges={pending.hasPendingChanges}
       >
         <ProgramDancesEditor
           programDances={program.programs_dances}
           dances={dances ?? []}
-          pendingAdds={pendingAdds}
-          pendingRemoves={pendingRemoves}
-          onAdd={addItem}
-          onRemove={removeItem}
+          pending={pending}
         />
       </RecordEdit>
     );
@@ -97,7 +142,7 @@ export const Program = ({ id }: { id?: number }) => {
       data={program}
       columns={columns}
       title={`Program: ${formatDate(program)}`}
-      onDelete={() => deleteProgram({ id: id! })}
+      onDelete={handleDelete}
     >
       <RelationList
         model='dance'

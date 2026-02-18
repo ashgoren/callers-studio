@@ -21,20 +21,19 @@ export const useChoreographer = (id: number) => {
 };
 
 export const useCreateChoreographer = () => {
-  const { success, error } = useNotify();
+  const { toastError } = useNotify();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (newChoreographer: ChoreographerInsert) => createChoreographer(newChoreographer),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['choreographers'] });
-      success('Choreographer created');
     },
-    onError: (err: Error) => error(err.message || 'Error creating choreographer')
+    onError: (err: Error) => toastError(err.message || 'Error creating choreographer')
   });
 };
 
 export const useUpdateChoreographer = () => {
-  const { success, error } = useNotify();
+  const { toastError } = useNotify();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, updates }: { id: number; updates: ChoreographerUpdate }) =>
@@ -44,14 +43,13 @@ export const useUpdateChoreographer = () => {
       queryClient.invalidateQueries({ queryKey: ['choreographers'] });
       queryClient.invalidateQueries({ queryKey: ['dances'] });
       queryClient.invalidateQueries({ queryKey: ['dance'] });
-      success('Choreographer updated');
     },
-    onError: (err: Error) => error(err.message || 'Error updating choreographer')
+    onError: (err: Error) => toastError(err.message || 'Error updating choreographer')
   });
 };
 
 export const useDeleteChoreographer = () => {
-  const { success, error } = useNotify();
+  const { toastError } = useNotify();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id }: { id: number }) => deleteChoreographer(id),
@@ -59,9 +57,8 @@ export const useDeleteChoreographer = () => {
       queryClient.invalidateQueries({ queryKey: ['choreographers'] });
       queryClient.invalidateQueries({ queryKey: ['dances'] });
       queryClient.invalidateQueries({ queryKey: ['dance'] });
-      success('Choreographer deleted');
     },
-    onError: (err: Error) => error(err.message || 'Error deleting choreographer')
+    onError: (err: Error) => toastError(err.message || 'Error deleting choreographer')
   });
 };
 

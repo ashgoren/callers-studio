@@ -21,7 +21,7 @@ export const useProgram = (id: number) => {
 };
 
 export const useUpdateProgram = () => {
-  const { success, error } = useNotify();
+  const { toastError } = useNotify();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, updates }: { id: number; updates: ProgramUpdate }) =>
@@ -31,27 +31,25 @@ export const useUpdateProgram = () => {
       queryClient.invalidateQueries({ queryKey: ['programs'] });
       queryClient.invalidateQueries({ queryKey: ['dances'] });
       queryClient.invalidateQueries({ queryKey: ['dance'] });
-      success('Program updated');
     },
-    onError: (err: Error) => error(err.message || 'Error updating program')
+    onError: (err: Error) => toastError(err.message || 'Error updating program')
   });
 };
 
 export const useCreateProgram = () => {
-  const { success, error } = useNotify();
+  const { toastError } = useNotify();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (newProgram: ProgramInsert) => createProgram(newProgram),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['programs'] });
-      success('Program created');
     },
-    onError: (err: Error) => error(err.message || 'Error creating program')
+    onError: (err: Error) => toastError(err.message || 'Error creating program')
   });
 };
 
 export const useDeleteProgram = () => {
-  const { success, error } = useNotify();
+  const { toastError } = useNotify();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id }: { id: number }) => deleteProgram(id),
@@ -59,9 +57,8 @@ export const useDeleteProgram = () => {
       queryClient.invalidateQueries({ queryKey: ['programs'] });
       queryClient.invalidateQueries({ queryKey: ['dances'] });
       queryClient.invalidateQueries({ queryKey: ['dance'] });
-      success('Program deleted');
     },
-    onError: (err: Error) => error(err.message || 'Error deleting program')
+    onError: (err: Error) => toastError(err.message || 'Error deleting program')
   });
 };
 
