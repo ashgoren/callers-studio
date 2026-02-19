@@ -17,6 +17,7 @@ import { Spinner } from '@/components/shared';
 import { SignInPage } from '@/components/auth/SignInPage';
 import { useAuth } from '@/contexts/AuthContext';
 import { ConfirmProvider } from 'material-ui-confirm';
+import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 import { logEnvironment } from './lib/utils';
 
 const ProtectedRoute = () => {
@@ -28,6 +29,8 @@ const ProtectedRoute = () => {
 
 function App() {
   logEnvironment();
+  const { user } = useAuth();
+  useRealtimeSync(user);
 
   return (
     <BrowserRouter>
