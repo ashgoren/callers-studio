@@ -28,10 +28,9 @@ export const Layout = ({ children }: { children: ReactNode }) => {
         )}
       >
         <Box sx={{
-          width: `calc(100vw - ${isOpen ? DRAWER_WIDTH : 0}px)`,
-          // mr: isOpen ? `${DRAWER_WIDTH}px` : 0,
+          width: { xs: '100%', sm: `calc(100% - ${isOpen ? DRAWER_WIDTH : 0}px)` },
           backgroundColor: 'background.default',
-          transition: theme => theme.transitions.create('margin', {
+          transition: theme => theme.transitions.create('width', {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.leavingScreen,
           })
