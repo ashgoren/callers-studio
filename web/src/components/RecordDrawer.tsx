@@ -46,7 +46,7 @@ export const RecordDrawer = () => {
         variant='persistent'
         anchor='right'
         open={isOpen}
-        sx={{ '& .MuiDrawer-paper': { width: DRAWER_WIDTH, height: '100vh'} }}
+        sx={{ '& .MuiDrawer-paper': { width: DRAWER_WIDTH, height: '100dvh'} }}
       >
         <Box sx={{ p: 2, height: '100%' }}>
           <DetailComponent
