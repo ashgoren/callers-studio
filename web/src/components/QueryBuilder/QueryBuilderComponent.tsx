@@ -69,7 +69,7 @@ export const QueryBuilderComponent = ({ fields, defaultQuery, query, onQueryChan
 
   return (
     <Collapse in={filterOpen}>
-      <Paper sx={{ mb: 2, p: 2, boxShadow: 3, borderRadius: 2, minWidth: 500, backgroundColor: 'action.hover' }}>
+      <Paper sx={{ mb: 2, p: 2, boxShadow: 3, borderRadius: 2, backgroundColor: 'action.hover' }}>
         <ModeToggle mode={mode} handleModeChange={handleModeChange} />
 
         {mode === 'visual' ?

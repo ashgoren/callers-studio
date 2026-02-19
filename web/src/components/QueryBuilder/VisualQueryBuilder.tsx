@@ -113,12 +113,20 @@ const getValuesForField = (_field: string, _operator: string, misc: FieldMisc) =
 };
 
 const styles = {
-  '& .rule': { display: 'flex', gap: 2, alignItems: 'center' },
+  '& .rule': {
+    display: 'flex',
+    gap: 2,
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    borderBottom: { xs: '1px solid', sm: 'none' },
+    borderColor: { xs: 'divider', sm: 'transparent' },
+    pb: { xs: 1, sm: 0 }
+  },
   '& .ruleGroup-header': { display: 'flex', gap: 2, alignItems: 'center' },
   '& .betweenRules': { my: 1 },
-  '& .rule-fields': { width: 150, flexShrink: 0 },
-  '& .rule-operators': { width: 180, flexShrink: 0 },
-  '& .rule-value': { width: 200, flexShrink: 0 },
+  '& .rule-fields': { width: 150 },
+  '& .rule-operators': { width: 180 },
+  '& .rule-value': { width: 200 },
   '& .ruleGroup-body': { display: 'flex', flexDirection: 'column', gap: 2, pt: 2 },
   '& .ruleGroup': { mt: 2, p: 3, borderLeft: '3px solid', borderRadius: 1 },
   "& .ruleGroup:has(> .ruleGroup-header .ruleGroup-combinators input[value='and'])": { // AND groups
