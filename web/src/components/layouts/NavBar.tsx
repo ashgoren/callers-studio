@@ -1,19 +1,27 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router'
-import { Typography, IconButton, AppBar, Toolbar, Tooltip, Button, Menu, MenuItem } from '@mui/material';
-import HomeIcon from '@mui/icons-material/Home';
+import { useNavigate } from 'react-router'
+import { Box, Typography, IconButton, AppBar, Toolbar, Tooltip, Button, Menu, MenuItem } from '@mui/material';
 import UndoIcon from '@mui/icons-material/Undo';
 import RedoIcon from '@mui/icons-material/Redo';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { useTitle } from '@/contexts/TitleContext';
 import { useUndoState, useUndoActions } from '@/contexts/UndoContext';
 import { ColorModeToggle } from './ColorModeToggle';
 import { useAuth } from '@/contexts/AuthContext';
 
-// TO DO: Add drawer for mobile nav (https://mui.com/material-ui/react-app-bar/#responsive-app-bar-with-drawer)
+const NAV_ITEMS = [
+  { label: 'Dances', path: '/dances' },
+  { label: 'Programs', path: '/programs' },
+  { label: 'Choreographers', path: '/choreographers' },
+];
+
 export const NavBar = () => {
   const [accountMenuAnchorEl, setAccountMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [navMenuAnchorEl, setNavMenuAnchorEl] = useState<null | HTMLElement>(null);
   const accountMenuOpen = Boolean(accountMenuAnchorEl);
+  const navMenuOpen = Boolean(navMenuAnchorEl);
 
+  const navigate = useNavigate();
   const { title } = useTitle();
   const { user, signOut } = useAuth();
   const { canUndo, canRedo, undoLabel, redoLabel } = useUndoState();
@@ -55,17 +63,41 @@ export const NavBar = () => {
         position='fixed'
         color='default'
         elevation={1}
-        // sx={{ left: 0, width: isRecordDrawerOpen ? `calc(100vw - ${DRAWER_WIDTH}px)` : '100vw' }}
       >
-        <Toolbar>
+        <Toolbar sx={{ position: 'relative' }}>
+          {user ? (
+            <>
+              <Button
+                color='inherit'
+                onClick={(e) => setNavMenuAnchorEl(e.currentTarget)}
+                endIcon={<KeyboardArrowDownIcon />}
+                sx={{
+                  position: { sm: 'absolute' },
+                  left: { sm: '50%' },
+                  top: { sm: '50%' },
+                  transform: { sm: 'translate(-50%, -50%)' },
+                  textTransform: 'none',
+                  fontSize: '1.25rem',
+                  fontWeight: 500,
+                }}
+              >
+                {title}
+              </Button>
+              <Menu anchorEl={navMenuAnchorEl} open={navMenuOpen} onClose={() => setNavMenuAnchorEl(null)}>
+                {NAV_ITEMS.map(item => (
+                  <MenuItem key={item.path} onClick={() => { navigate(item.path); setNavMenuAnchorEl(null); }}>
+                    {item.label}
+                  </MenuItem>
+                ))}
+              </Menu>
+            </>
+          ) : (
+            <Typography variant='h6' component='h1' sx={{ flexGrow: 1, textAlign: 'center' }}>
+              {title}
+            </Typography>
+          )}
 
-          <IconButton component={Link} to='/' color='inherit' edge='start'>
-            <HomeIcon />
-          </IconButton>
-
-          <Typography variant='h6' component='h1' sx={{ flexGrow: 1, textAlign: 'center' }}>
-            {title}
-          </Typography>
+          <Box sx={{ flexGrow: 1 }} />
 
           {user && (
             <>
@@ -86,8 +118,6 @@ export const NavBar = () => {
             </>
           )}
 
-          <ColorModeToggle />
-
           {user && (
             <>
               <Button
@@ -102,6 +132,8 @@ export const NavBar = () => {
               </Menu>
             </>
           )}
+
+          <ColorModeToggle />
 
         </Toolbar>
       </AppBar>
