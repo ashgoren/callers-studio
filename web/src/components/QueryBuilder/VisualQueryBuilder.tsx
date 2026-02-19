@@ -45,8 +45,8 @@ const AddGroupAction = ({ handleOnClick, disabled }: ActionProps) => (
   </IconButton>
 );
 
-const RemoveAction = ({ handleOnClick, disabled }: ActionProps) => (
-  <IconButton size='small' onClick={handleOnClick} disabled={disabled} sx={{ p: 0.25 }} title='Remove'>
+const RemoveAction = ({ handleOnClick, disabled, className }: ActionProps) => (
+  <IconButton className={className} size='small' onClick={handleOnClick} disabled={disabled} sx={{ p: 0.25 }} title='Remove'>
     <Close sx={{ fontSize: 16 }} />
   </IconButton>
 );
@@ -156,17 +156,24 @@ const getValuesForField = (_field: string, _operator: string, misc: FieldMisc) =
 
 const styles = {
   '& .rule': {
+    position: { xs: 'relative', sm: 'static' },
     display: 'flex',
-    gap: 2,
+    gap: { xs: 1, sm: 2 },
     alignItems: 'center',
     flexWrap: 'wrap',
-    borderBottom: '1px solid',
+    py: { xs: 1.5, sm: 0.75 },
+    pr: { xs: 5, sm: 0 },
+    borderBottom: { xs: '2px solid', sm: 'none' },
     borderColor: 'divider',
-    py: 0.75,
   },
   '& .rule:last-child': {
     borderBottom: 'none',
-    pb: 0,
+    pb: { xs: 1.5, sm: 0 },
+  },
+  '& .rule-remove': {
+    position: { xs: 'absolute', sm: 'static' },
+    top: { xs: 8, sm: 'auto' },
+    right: { xs: 0, sm: 'auto' },
   },
   '& .ruleGroup-header': {
     display: 'flex',
@@ -189,5 +196,8 @@ const styles = {
   '& .ruleGroup.rg-or': {
     backgroundColor: 'action.hover',
     borderColor: 'info.main',
-  }
+  },
+  '& .queryBuilder-dragHandle': {
+    display: { xs: 'none', sm: 'flex' },
+  },
 };
