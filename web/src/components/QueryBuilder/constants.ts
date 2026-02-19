@@ -1,8 +1,3 @@
-export const combinators = [
-  { name: 'and', label: 'ALL of these (AND)' },
-  { name: 'or', label: 'ANY of these (OR)' },
-];
-
 export const operators = [
   { name: 'contains', label: 'contains' },
   { name: 'doesNotContain', label: 'does not contain' },

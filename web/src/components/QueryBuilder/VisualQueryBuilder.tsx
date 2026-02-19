@@ -1,11 +1,15 @@
 import { useMemo } from 'react';
-import { Box, IconButton, Tooltip } from '@mui/material';
-import { ArrowUpward, ArrowDownward, Add, LibraryAdd, Close } from '@mui/icons-material';
+import { Box, IconButton, ToggleButton, ToggleButtonGroup, Tooltip } from '@mui/material';
+import { Add, LibraryAdd, Close } from '@mui/icons-material';
 import { QueryBuilder } from 'react-querybuilder';
+import { QueryBuilderDnD } from '@react-querybuilder/dnd';
+import * as ReactDnD from 'react-dnd';
+import * as ReactDndHtml5Backend from 'react-dnd-html5-backend';
+import * as ReactDndTouchBackend from 'react-dnd-touch-backend';
 import { QueryBuilderMaterial } from '@react-querybuilder/material';
 import { OperatorSelector } from './OperatorSelector';
-import { combinators, operators, textOperators, numberOperators, booleanOperators, dateOperators } from './constants';
-import type { Field, RuleGroupType, ShiftActionsProps, ActionProps } from 'react-querybuilder';
+import { operators, textOperators, numberOperators, booleanOperators, dateOperators } from './constants';
+import type { Field, RuleGroupType, ActionProps, CombinatorSelectorProps } from 'react-querybuilder';
 
 type QueryBuilderComponentProps = {
   fields: Field[];
@@ -13,15 +17,16 @@ type QueryBuilderComponentProps = {
   onQueryChange: (query: RuleGroupType) => void;
 };
 
-const ShiftActions = ({ shiftUp, shiftDown, shiftUpDisabled, shiftDownDisabled }: ShiftActionsProps) => (
-  <>
-    <IconButton size='small' onClick={shiftUp} disabled={shiftUpDisabled} sx={{ p: 0.25 }}>
-      <ArrowUpward sx={{ fontSize: 16 }} />
-    </IconButton>
-    <IconButton size='small' onClick={shiftDown} disabled={shiftDownDisabled} sx={{ p: 0.25 }}>
-      <ArrowDownward sx={{ fontSize: 16 }} />
-    </IconButton>
-  </>
+const CombinatorSelector = ({ value, handleOnChange }: CombinatorSelectorProps) => (
+  <ToggleButtonGroup
+    size='small'
+    exclusive
+    value={value}
+    onChange={(_e, val) => val && handleOnChange(val)}
+  >
+    <ToggleButton value='and' color='warning'>ALL</ToggleButton>
+    <ToggleButton value='or' color='info'>ANY</ToggleButton>
+  </ToggleButtonGroup>
 );
 
 const AddRuleAction = ({ handleOnClick, disabled }: ActionProps) => (
@@ -51,30 +56,31 @@ export const VisualQueryBuilder = ({ fields, query, onQueryChange }: QueryBuilde
 
   return (
     <Box sx={styles}>
-      <QueryBuilderMaterial>
-        <QueryBuilder
-          fields={fields}
-          query={query}
-          onQueryChange={onQueryChange}
-          // enableDragAndDrop
-          showShiftActions
-          combinators={combinators}
-          operators={operators}
-          getOperators={getOperatorsForField}
-          getDefaultOperator={getDefaultOperatorForField}
-          getValueEditorType={getValueEditorTypeForField}
-          getValues={getValuesForField}
-          context={context}
-          controlElements={{
-            operatorSelector: OperatorSelector,
-            shiftActions: ShiftActions,
-            addRuleAction: AddRuleAction,
-            addGroupAction: AddGroupAction,
-            removeRuleAction: RemoveAction,
-            removeGroupAction: RemoveAction,
-          }}
-        />
-      </QueryBuilderMaterial>
+      <QueryBuilderDnD dnd={{ ...ReactDnD, ...ReactDndHtml5Backend, ...ReactDndTouchBackend }}>
+        <QueryBuilderMaterial>
+          <QueryBuilder
+            fields={fields}
+            query={query}
+            onQueryChange={onQueryChange}
+            enableDragAndDrop
+            getRuleGroupClassname={rg => rg.combinator === 'or' ? 'rg-or' : 'rg-and'}
+            operators={operators}
+            getOperators={getOperatorsForField}
+            getDefaultOperator={getDefaultOperatorForField}
+            getValueEditorType={getValueEditorTypeForField}
+            getValues={getValuesForField}
+            context={context}
+            controlElements={{
+              combinatorSelector: CombinatorSelector,
+              operatorSelector: OperatorSelector,
+              addRuleAction: AddRuleAction,
+              addGroupAction: AddGroupAction,
+              removeRuleAction: RemoveAction,
+              removeGroupAction: RemoveAction,
+            }}
+          />
+        </QueryBuilderMaterial>
+      </QueryBuilderDnD>
     </Box>
   )
 };
@@ -118,24 +124,33 @@ const styles = {
     gap: 2,
     alignItems: 'center',
     flexWrap: 'wrap',
-    borderBottom: { xs: '1px solid', sm: 'none' },
-    borderColor: { xs: 'divider', sm: 'transparent' },
-    pb: { xs: 1, sm: 0 }
+    borderBottom: '1px solid',
+    borderColor: 'divider',
+    py: 0.75,
   },
-  '& .ruleGroup-header': { display: 'flex', gap: 2, alignItems: 'center' },
-  '& .betweenRules': { my: 1 },
+  '& .rule:last-child': {
+    borderBottom: 'none',
+    pb: 0,
+  },
+  '& .ruleGroup-header': {
+    display: 'flex',
+    gap: 2,
+    alignItems: 'center',
+    borderBottom: '1px solid',
+    borderColor: 'divider',
+    pb: 0.75,
+    mb: 0,
+  },
   '& .rule-fields': { width: 150 },
   '& .rule-operators': { width: 180 },
   '& .rule-value': { width: 200 },
-  '& .ruleGroup-body': { display: 'flex', flexDirection: 'column', gap: 2, pt: 2 },
-  '& .ruleGroup': { mt: 2, p: 3, borderLeft: '3px solid', borderRadius: 1 },
-  "& .ruleGroup:has(> .ruleGroup-header .ruleGroup-combinators input[value='and'])": { // AND groups
-    // backgroundColor: alpha(theme.palette.text.primary, 0.04),
+  '& .ruleGroup-body': { display: 'flex', flexDirection: 'column' },
+  '& .ruleGroup': { mt: 2, p: 2, border: '1px solid', borderRadius: 1 },
+  '& .ruleGroup.rg-and': {
     backgroundColor: 'background.paper',
     borderColor: 'warning.main',
   },
-  "& .ruleGroup:has(> .ruleGroup-header .ruleGroup-combinators input[value='or'])": { // OR groups
-    // backgroundColor: alpha(theme.palette.text.primary, 0.1),
+  '& .ruleGroup.rg-or': {
     backgroundColor: 'action.hover',
     borderColor: 'info.main',
   }
