@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { MaterialReactTable } from 'material-react-table';
+import { Fab, Tooltip } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
 import { useTable } from '@/hooks/useTable';
 import { QueryBuilderComponent } from '@/components/QueryBuilder';
 import { TableControls } from '@/components/TableControls';
@@ -18,7 +20,7 @@ export const TablePage = <TData extends MRT_RowData & { id: number }>({ model, u
   defaultQuery: RuleGroupType;
   tableInitialState?: MRT_TableOptions<TData>['initialState'];
 }) => {
-  const { openDrawer } = useDrawerActions();
+  const { openDrawer, openDrawerForNewRecord } = useDrawerActions();
 
   const onRowClick = (row: TData) => {
     openDrawer(model, row.id);
@@ -57,6 +59,16 @@ export const TablePage = <TData extends MRT_RowData & { id: number }>({ model, u
       />
 
       <MaterialReactTable table={table} />
+
+      <Tooltip title={`Add ${model}`} placement='left'>
+        <Fab
+          color='primary'
+          onClick={() => openDrawerForNewRecord(model)}
+          sx={{ position: 'fixed', bottom: 32, right: 32 }}
+        >
+          <AddIcon />
+        </Fab>
+      </Tooltip>
     </>
   );
 };

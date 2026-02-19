@@ -3,7 +3,6 @@ import { useConfirm } from 'material-ui-confirm';
 import { FilterButton } from '@/components/QueryBuilder/FilterButton';
 import { countActiveRules } from '@/components/QueryBuilder/utils';
 import { clearPersistence } from '@/hooks/usePersistence';
-import { useDrawerActions } from '@/contexts/DrawerContext';
 import type { RuleGroupType } from 'react-querybuilder';
 import type { Dispatch, SetStateAction } from 'react';
 import type { Model } from '@/lib/types/database';
@@ -14,7 +13,6 @@ export const TableControls = ({ model, query, setFilterOpen }: {
   setFilterOpen: Dispatch<SetStateAction<boolean>>;
 }) => {
   const confirm = useConfirm();
-  const { openDrawerForNewRecord } = useDrawerActions();
 
   const handleClearState = async () => {
     const { confirmed } = await confirm({
@@ -34,14 +32,6 @@ export const TableControls = ({ model, query, setFilterOpen }: {
         onClick={() => setFilterOpen((prev: boolean) => !prev)}
         activeRuleCount={countActiveRules(query.rules)}
       />
-
-      <Button
-        variant='contained'
-        color='primary'
-        onClick={() => openDrawerForNewRecord(model)}
-      >
-        Add {model}
-      </Button>
 
       <Button
         size='small'
