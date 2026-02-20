@@ -7,15 +7,15 @@ interface TitleContextType {
 }
 
 const TitleContext = createContext<TitleContextType>({
-  title: "Caller's Box",
+  title: "Caller Studio",
   setTitle: () => {},
 });
 
 export const TitleProvider = ({ children }: { children: React.ReactNode }) => {
-  const [title, setTitle] = useState("Caller's Box");
+  const [title, setTitle] = useState("Caller Studio");
 
   useEffect(() => {
-    document.title = title && title !== "Caller's Box" ? `${title} | Caller's Box` : "Caller's Box";
+    document.title = title && title !== "Caller Studio" ? `${title} | Caller Studio` : "Caller Studio";
   }, [title]);
 
   return (

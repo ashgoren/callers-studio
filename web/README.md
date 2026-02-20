@@ -1,4 +1,4 @@
-# Caller's Studio — Frontend
+# Caller Studio — Frontend
 
 React 19 SPA for organizing contra dances & programs. Uses Material UI v7, Material React Table, and Supabase (PostgreSQL).
 

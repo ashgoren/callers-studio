@@ -1,4 +1,4 @@
-# Caller's Studio
+# Caller Studio
 
 In-progress web app for organizing contra dances & programs.
 
