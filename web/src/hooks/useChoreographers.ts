@@ -1,22 +1,12 @@
 import { useNotify } from '@/hooks/useNotify';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getChoreographers, getChoreographer, createChoreographer, updateChoreographer, deleteChoreographer } from '@/lib/api/choreographers'
-import type { Choreographer, ChoreographerInsert, ChoreographerUpdate } from '@/lib/types/database';
+import { getChoreographers, createChoreographer, updateChoreographer, deleteChoreographer } from '@/lib/api/choreographers'
+import type { ChoreographerInsert, ChoreographerUpdate } from '@/lib/types/database';
 
 export const useChoreographers = () => {
   return useQuery({
     queryKey: ['choreographers'],
     queryFn: getChoreographers,
-    select: (data: Choreographer[]) => data.map(buildDancesColumn),
-  })
-};
-
-export const useChoreographer = (id: number) => {
-  return useQuery({
-    queryKey: ['choreographer', id],
-    queryFn: () => getChoreographer(id),
-    enabled: !!id,
-    select: (data: Choreographer) => buildDancesColumn(data)
   })
 };
 
@@ -38,8 +28,7 @@ export const useUpdateChoreographer = () => {
   return useMutation({
     mutationFn: ({ id, updates }: { id: number; updates: ChoreographerUpdate }) =>
       updateChoreographer(id, updates),
-    onSuccess: (updatedChoreographer, variables) => {
-      queryClient.setQueryData(['choreographer', variables.id], updatedChoreographer);
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['choreographers'] });
       queryClient.invalidateQueries({ queryKey: ['dances'] });
       queryClient.invalidateQueries({ queryKey: ['dance'] });
@@ -61,10 +50,3 @@ export const useDeleteChoreographer = () => {
     onError: (err: Error) => toastError(err.message || 'Error deleting choreographer')
   });
 };
-
-// Helpers
-
-const buildDancesColumn = (choreographer: Choreographer) => ({
-  ...choreographer,
-  danceNames: choreographer.dances_choreographers.map(dc => dc.dance.title).join(', ')
-});

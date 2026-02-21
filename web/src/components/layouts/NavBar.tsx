@@ -12,7 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 const NAV_ITEMS = [
   { label: 'Dances', path: '/dances' },
   { label: 'Programs', path: '/programs' },
-  { label: 'Choreographers', path: '/choreographers' },
+  { label: 'Settings', path: '/settings' },
 ];
 
 export const NavBar = () => {

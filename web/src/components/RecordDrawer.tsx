@@ -4,14 +4,12 @@ import { useDrawerState } from '@/contexts/DrawerContext';
 import { useDrawerActions } from '@/contexts/DrawerContext';
 import { Dance } from './Dances/Dance';
 import { Program } from './Programs/Program';
-import { Choreographer } from './Choreographers/Choreographer';
 
 const DRAWER_WIDTH = 400;
 
 const DETAIL_COMPONENTS: Record<string, React.ComponentType<{ id?: number }>> = {
   dance: Dance,
-  program: Program,
-  choreographer: Choreographer,
+  program: Program
 };
 
 export const RecordDrawer = () => {

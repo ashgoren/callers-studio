@@ -9,7 +9,7 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router';
 import { Layout } from './components/layouts/Layout';
 import { Dances } from './components/Dances';
 import { Programs } from './components/Programs';
-import { Choreographers } from './components/Choreographers';
+import { SettingsPage, ChoreographersList } from './components/Settings';
 import { Spinner } from '@/components/shared';
 import { SignInPage } from '@/components/auth/SignInPage';
 import { useAuth } from '@/contexts/AuthContext';
@@ -44,7 +44,8 @@ function App() {
                         <Route path='/' element={<Navigate to='/dances' />} />
                         <Route path='/dances' element={<Dances />} />
                         <Route path='/programs' element={<Programs />} />
-                        <Route path='/choreographers' element={<Choreographers />} />
+                        <Route path='/settings' element={<SettingsPage />} />
+                        <Route path='/settings/choreographers' element={<ChoreographersList />} />
                       </Route>
                     </Routes>
                   </Layout>

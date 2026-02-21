@@ -42,12 +42,7 @@ export const columns: MRT_ColumnDef<Dance>[] = [
     enableColumnFilter: false,
     size: 200,
     minSize: 170,
-    Cell: ({ row }) => <RelationCell
-      items={row.original.dances_choreographers}
-      model='choreographer'
-      getId={(joinRow) => joinRow.choreographer.id}
-      getLabel={(joinRow) => joinRow.choreographer.name}
-    />
+    Cell: ({ row }) => row.original.dances_choreographers.map(dc => dc.choreographer.name).join(', ')
   },
   {
     accessorKey: 'difficulty',

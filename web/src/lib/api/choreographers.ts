@@ -1,10 +1,10 @@
 import { supabase } from '@/lib/supabase'
-import type { Choreographer, ChoreographerInsert, ChoreographerUpdate } from '@/lib/types/database';
+import type { Choreographer, ChoreographerRow, ChoreographerInsert, ChoreographerUpdate } from '@/lib/types/database';
 
 export const getChoreographers = async () => {
   const { data, error } = await supabase
     .from('choreographers')
-    .select('*, dances_choreographers(id, dance:dances(*))')
+    .select('*, dances_choreographers(id)')
     .order('name', { ascending: true });
 
   if (error) {
@@ -14,38 +14,27 @@ export const getChoreographers = async () => {
   return data as Choreographer[];
 };
 
-export const getChoreographer = async (id: number) => {
-  const { data, error } = await supabase
-    .from('choreographers')
-    .select('*, dances_choreographers(id, dance:dances(*))')
-    .eq('id', id)
-    .single();
-
-  if (error) throw new Error(error.message);
-  return data as Choreographer;
-};
-
 export const updateChoreographer = async (id: number, updates: ChoreographerUpdate) => {
   const { data, error } = await supabase
     .from('choreographers')
     .update(updates)
     .eq('id', id)
-    .select('*, dances_choreographers(id, dance:dances(*))')
+    .select('*')
     .single();
 
   if (error) throw new Error(error.message);
-  return data as Choreographer;
+  return data as ChoreographerRow;
 };
 
 export const createChoreographer = async (newChoreographer: ChoreographerInsert) => {
   const { data, error } = await supabase
     .from('choreographers')
     .insert(newChoreographer)
-    .select('*, dances_choreographers(id, dance:dances(*))')
+    .select('*')
     .single();
 
   if (error) throw new Error(error.message);
-  return data as Choreographer;
+  return data as ChoreographerRow;
 };
 
 export const deleteChoreographer = async (id: number) => {
