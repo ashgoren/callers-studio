@@ -21,17 +21,183 @@ Supabase runs locally at `http://127.0.0.1:54321`. Credentials are in `.env.loca
 Supabase → src/lib/api/ → src/hooks/ → Components
 ```
 
-- **`src/lib/api/`** — Thin Supabase query functions. Eager-loads relations via `.select('*, relation(*)')`.
+- **`src/lib/api/`** — Thin Supabase query functions. Primary models eager-load relations via `.select('*, relation(*)')`. Auxiliary tables use lightweight selects (junction IDs only).
 - **`src/hooks/`** — TanStack Query v5 wrappers. Handle CRUD, caching, and invalidation.
-- **`src/components/{Entity}/config.tsx`** — Column definitions, default form values, query builder config.
-- **`TablePage`** — Generic wrapper connecting a data hook + column config to Material React Table.
+- **`src/components/{Entity}/config.tsx`** — Column definitions, default form values, query builder config (primary models only).
+- **`TablePage`** — Generic wrapper connecting a data hook + column config to Material React Table. Used by primary models (Dances, Programs).
 - **`RecordDrawer`** — Right-side drawer for view/edit/create. Managed by `DrawerContext`.
+- **`src/components/Settings/`** — Hub page at `/settings` with inline-editable list components for auxiliary tables (choreographers, key moves, vibes, etc.).
 
 ---
 
 ## Developer Guides
 
-### Adding a New Table / Model
+### Adding a New Auxiliary Table (Settings List)
+
+Auxiliary tables hold reference data linked to dances but not browsed independently — choreographers, key moves, vibes, etc. These live under `/settings` as simple inline-editable lists rather than full `TablePage` views. Use `choreographers` as the reference implementation.
+
+#### 1. Database
+
+Create the table and run a migration. Regenerate types:
+
+```bash
+supabase gen types typescript --local > src/lib/types/database_generated.ts
+```
+
+#### 2. Custom Types — `src/lib/types/database.ts`
+
+```typescript
+export type Model = 'dance' | 'program' | 'choreographer' | 'key_move'; // add here
+
+export type KeyMoveRow = Tables['key_moves']['Row'];
+// If delete-guarding is needed (disable delete when linked to dances), include the junction count:
+export type KeyMove = KeyMoveRow & { dances_key_moves: { id: number }[] };
+// If no delete-guarding, KeyMove = KeyMoveRow is sufficient.
+export type KeyMoveInsert = Tables['key_moves']['Insert'];
+export type KeyMoveUpdate = Tables['key_moves']['Update'];
+```
+
+#### 3. API Layer — `src/lib/api/keyMoves.ts`
+
+No single-record fetch needed. Select only junction IDs (not full related records) if delete-guarding:
+
+```typescript
+import { supabase } from '@/lib/supabase';
+import type { KeyMove, KeyMoveInsert, KeyMoveUpdate } from '@/lib/types/database';
+
+export const getKeyMoves = async () => {
+  const { data, error } = await supabase
+    .from('key_moves')
+    .select('*, dances_key_moves(id)')   // omit join entirely if no delete-guarding
+    .order('name', { ascending: true });
+  if (error) throw new Error(error.message);
+  return data as KeyMove[];
+};
+
+export const createKeyMove = async (keyMove: KeyMoveInsert) => {
+  const { data, error } = await supabase.from('key_moves').insert(keyMove).select('*').single();
+  if (error) throw new Error(error.message);
+  return data;
+};
+
+export const updateKeyMove = async (id: number, updates: KeyMoveUpdate) => {
+  const { data, error } = await supabase.from('key_moves').update(updates).eq('id', id).select('*').single();
+  if (error) throw new Error(error.message);
+  return data;
+};
+
+export const deleteKeyMove = async (id: number) => {
+  const { error } = await supabase.from('key_moves').delete().eq('id', id);
+  if (error) throw new Error(error.message);
+};
+```
+
+#### 4. Query Hook — `src/hooks/useKeyMoves.ts`
+
+No single-record hook, no `select` transform:
+
+```typescript
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNotify } from './useNotify';
+import { getKeyMoves, createKeyMove, updateKeyMove, deleteKeyMove } from '@/lib/api/keyMoves';
+import type { KeyMoveInsert, KeyMoveUpdate } from '@/lib/types/database';
+
+export const useKeyMoves = () =>
+  useQuery({ queryKey: ['key_moves'], queryFn: getKeyMoves });
+
+export const useCreateKeyMove = () => {
+  const queryClient = useQueryClient();
+  const { toastError } = useNotify();
+  return useMutation({
+    mutationFn: (keyMove: KeyMoveInsert) => createKeyMove(keyMove),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['key_moves'] }),
+    onError: (err: Error) => toastError(err.message),
+  });
+};
+
+export const useUpdateKeyMove = () => {
+  const queryClient = useQueryClient();
+  const { toastError } = useNotify();
+  return useMutation({
+    mutationFn: ({ id, updates }: { id: number; updates: KeyMoveUpdate }) => updateKeyMove(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['key_moves'] });
+      queryClient.invalidateQueries({ queryKey: ['dances'] }); // if name appears on dance records
+      queryClient.invalidateQueries({ queryKey: ['dance'] });
+    },
+    onError: (err: Error) => toastError(err.message),
+  });
+};
+
+export const useDeleteKeyMove = () => {
+  const queryClient = useQueryClient();
+  const { toastError } = useNotify();
+  return useMutation({
+    mutationFn: ({ id }: { id: number }) => deleteKeyMove(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['key_moves'] });
+      queryClient.invalidateQueries({ queryKey: ['dances'] });
+      queryClient.invalidateQueries({ queryKey: ['dance'] });
+    },
+    onError: (err: Error) => toastError(err.message),
+  });
+};
+```
+
+#### 5. Settings List Component — `src/components/Settings/KeyMovesList.tsx`
+
+Copy the pattern from `ChoreographersList.tsx`. Key elements:
+
+- `useTitle` to set the page title
+- `useState` for `searchTerm`, `editingId` (`number | 'new' | null`), `editValue`
+- Search `TextField` at top filters client-side via `.filter()`
+- `List` of rows: normal mode shows name + edit/delete icon buttons; edit mode shows a `TextField` with save (Check) / cancel (Close) icons
+- Delete disabled (with `Tooltip` explaining why) when `item.dances_key_moves.length > 0`
+- Count shown as `(N)` with tooltip in view mode, hidden in edit mode
+- Add button at bottom sets `editingId = 'new'`
+- `handleSave` calls create or update; errors are already toasted by the hook
+
+#### 6. Wire Up Settings Page — `src/components/Settings/SettingsPage.tsx`
+
+Add to `SETTINGS_ITEMS`:
+
+```typescript
+{ label: 'Key Moves', description: 'Manage key move tags', path: '/settings/key-moves', icon: <MusicNoteIcon /> },
+```
+
+#### 7. Export — `src/components/Settings/index.ts`
+
+```typescript
+export * from './KeyMovesList';
+```
+
+#### 8. Add Route — `src/App.tsx`
+
+```typescript
+import { KeyMovesList } from './components/Settings';
+
+// inside <ProtectedRoute>:
+<Route path='/settings/key-moves' element={<KeyMovesList />} />
+```
+
+No nav changes needed — already under `/settings`.
+
+#### 9. Surface in Dance Table and Drawer (if applicable)
+
+If this auxiliary table should appear on dance records, follow the steps in [Adding a New Relation Between Tables](#adding-a-new-relation-between-tables) — specifically:
+
+- Add the junction array to the `Dance` type in `src/lib/types/database.ts`
+- Update `.select()` in `src/lib/api/dances.ts` to eager-load the relation
+- Create junction table API functions in `src/lib/api/dances{Model}s.ts` (`add{Model}ToDance`, `remove{Model}FromDance`)
+- Create mutation hooks in `src/hooks/useDances{Model}s.ts`
+- Update `buildRelationsColumns` in `src/hooks/useDances.ts` with a computed name string (if users should filter by it)
+- Add a `RelationCell` column to `src/components/Dances/config.tsx`
+- Add `RelationEditor` (edit/create modes) and `RelationList` (view mode) to `src/components/Dances/Dance.tsx`
+- Add computed field to `queryFields` in `config.tsx` (if filtering needed)
+
+---
+
+### Adding a New Primary Model (Full Table + Drawer)
 
 #### 1. Database
 
@@ -655,11 +821,36 @@ Then add to `queryFields` in `config.tsx`. The field name must match the key add
 | Query builder evaluator | `src/components/QueryBuilder/queryEvaluator.ts` |
 | Dance config | `src/components/Dances/config.tsx` |
 | Program config | `src/components/Programs/config.tsx` |
-| Choreographer config | `src/components/Choreographers/config.tsx` |
+| Settings hub | `src/components/Settings/SettingsPage.tsx` |
+| Choreographers list | `src/components/Settings/ChoreographersList.tsx` |
 
 ---
 
-## Checklist: New Model
+## Checklist: New Auxiliary Table (Settings List)
+
+- [ ] Supabase migration created and applied
+- [ ] `supabase gen types typescript --local > src/lib/types/database_generated.ts`
+- [ ] `Model` union updated in `src/lib/types/database.ts`
+- [ ] Custom types (`*Row`, `*`, `*Insert`, `*Update`) added to `database.ts` (junction array with `{ id: number }[]` if delete-guarding)
+- [ ] API functions created in `src/lib/api/{model}s.ts` (list, create, update, delete — no single-record fetch)
+- [ ] TanStack Query hooks created in `src/hooks/use{Model}s.ts` (list hook + mutation hooks — no single-record hook)
+- [ ] Settings list component created in `src/components/Settings/{Model}sList.tsx` (see `ChoreographersList.tsx` as reference)
+- [ ] Exported from `src/components/Settings/index.ts`
+- [ ] Entry added to `SETTINGS_ITEMS` in `src/components/Settings/SettingsPage.tsx`
+- [ ] Route added in `src/App.tsx` under `/settings/{model}s`
+
+**If surfacing in dances (table column + drawer):**
+- [ ] Junction array added to `Dance` type in `src/lib/types/database.ts`
+- [ ] `.select()` in `src/lib/api/dances.ts` updated to eager-load relation
+- [ ] Junction table API functions created (`add{Model}ToDance`, `remove{Model}FromDance`) in `src/lib/api/dances{Model}s.ts`
+- [ ] Mutation hooks created in `src/hooks/useDances{Model}s.ts`
+- [ ] `buildRelationsColumns` in `src/hooks/useDances.ts` updated with computed name string (if filtering needed)
+- [ ] `RelationCell` column added to `src/components/Dances/config.tsx`
+- [ ] `RelationEditor` added to `Dance.tsx` edit/create modes
+- [ ] `RelationList` added to `Dance.tsx` view mode
+- [ ] Computed field added to `queryFields` in `config.tsx` (if filtering needed)
+
+## Checklist: New Primary Model (Full Table + Drawer)
 
 - [ ] Supabase migration created and applied
 - [ ] `supabase gen types typescript --local > src/lib/types/database_generated.ts`
