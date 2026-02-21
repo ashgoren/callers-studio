@@ -38,16 +38,26 @@ Auxiliary tables hold reference data linked to dances but not browsed independen
 
 #### 1. Database
 
-Create the table and run a migration. Regenerate types:
+Create the table and junction table in a migration and run it in Supabase locally & in production.
+(Use `supabase/migrations/20260221200542_add_key_moves.sql` as a template.)
 
 ```bash
-supabase gen types typescript --local > src/lib/types/database_generated.ts
+supabase migration up  # apply pending migrations locally
+supabase db push       # apply pending migrations to production
 ```
 
 #### 2. Custom Types — `src/lib/types/database.ts`
 
+Regenerate TypeScript types:
+
+```bash
+npm run dev # or manually: supabase gen types typescript --local > src/lib/types/database_generated.ts
+```
+
+Then define the custom types. Include the junction array with `{ id: number }[]` if you want to disable deleting key moves that are linked to dances (delete-guarding). If delete-guarding isn't needed, `KeyMove = KeyMoveRow` is sufficient and the junction array can be omitted.
+
 ```typescript
-export type Model = 'dance' | 'program' | 'choreographer' | 'key_move'; // add here
+export type Model = 'dance' | 'program' | 'choreographer' | 'key_move';
 
 export type KeyMoveRow = Tables['key_moves']['Row'];
 // If delete-guarding is needed (disable delete when linked to dances), include the junction count:
@@ -122,8 +132,6 @@ export const useUpdateKeyMove = () => {
     mutationFn: ({ id, updates }: { id: number; updates: KeyMoveUpdate }) => updateKeyMove(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['key_moves'] });
-      queryClient.invalidateQueries({ queryKey: ['dances'] }); // if name appears on dance records
-      queryClient.invalidateQueries({ queryKey: ['dance'] });
     },
     onError: (err: Error) => toastError(err.message),
   });
@@ -136,8 +144,6 @@ export const useDeleteKeyMove = () => {
     mutationFn: ({ id }: { id: number }) => deleteKeyMove(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['key_moves'] });
-      queryClient.invalidateQueries({ queryKey: ['dances'] });
-      queryClient.invalidateQueries({ queryKey: ['dance'] });
     },
     onError: (err: Error) => toastError(err.message),
   });

@@ -30,8 +30,6 @@ export const useUpdateChoreographer = () => {
       updateChoreographer(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['choreographers'] });
-      queryClient.invalidateQueries({ queryKey: ['dances'] });
-      queryClient.invalidateQueries({ queryKey: ['dance'] });
     },
     onError: (err: Error) => toastError(err.message || 'Error updating choreographer')
   });
@@ -44,8 +42,6 @@ export const useDeleteChoreographer = () => {
     mutationFn: ({ id }: { id: number }) => deleteChoreographer(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['choreographers'] });
-      queryClient.invalidateQueries({ queryKey: ['dances'] });
-      queryClient.invalidateQueries({ queryKey: ['dance'] });
     },
     onError: (err: Error) => toastError(err.message || 'Error deleting choreographer')
   });

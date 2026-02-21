@@ -133,6 +133,99 @@ export type Database = {
           },
         ]
       }
+      dances_key_moves: {
+        Row: {
+          created_at: string
+          dance_id: number
+          id: number
+          key_move_id: number
+        }
+        Insert: {
+          created_at?: string
+          dance_id: number
+          id?: number
+          key_move_id: number
+        }
+        Update: {
+          created_at?: string
+          dance_id?: number
+          id?: number
+          key_move_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dances_key_moves_dance_id_fkey"
+            columns: ["dance_id"]
+            isOneToOne: false
+            referencedRelation: "dances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dances_key_moves_key_move_id_fkey"
+            columns: ["key_move_id"]
+            isOneToOne: false
+            referencedRelation: "key_moves"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dances_vibes: {
+        Row: {
+          created_at: string
+          dance_id: number
+          id: number
+          vibe_id: number
+        }
+        Insert: {
+          created_at?: string
+          dance_id: number
+          id?: number
+          vibe_id: number
+        }
+        Update: {
+          created_at?: string
+          dance_id?: number
+          id?: number
+          vibe_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dances_vibes_dance_id_fkey"
+            columns: ["dance_id"]
+            isOneToOne: false
+            referencedRelation: "dances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dances_vibes_vibe_id_fkey"
+            columns: ["vibe_id"]
+            isOneToOne: false
+            referencedRelation: "vibes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      key_moves: {
+        Row: {
+          created_at: string
+          id: number
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          name: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       programs: {
         Row: {
           created_at: string
@@ -195,6 +288,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      vibes: {
+        Row: {
+          created_at: string
+          id: number
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          name: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {
