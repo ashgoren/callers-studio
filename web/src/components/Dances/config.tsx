@@ -37,6 +37,17 @@ export const columns: MRT_ColumnDef<Dance>[] = [
   //   minSize: 55,
   // },
   {
+    accessorKey: 'url',
+    header: 'URL',
+    enableColumnFilter: false,
+    enableSorting: false,
+    size: 120,
+    minSize: 50,
+    meta: {
+      inputType: 'text',
+    }
+  },
+  {
     id: 'choreographers',
     header: '🔗 Choreographers',
     enableColumnFilter: false,
