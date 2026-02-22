@@ -10,7 +10,7 @@ export const useNotify = () => {
   return {
     toastSuccess: (message: string) => enqueueSnackbar(message, {
       variant: 'success',
-      anchorOrigin: { vertical: 'top', horizontal: 'right' },
+      anchorOrigin: { vertical: 'top', horizontal: 'center' },
       action: (snackbarId) => (
         <>
           <Button size='small' color='inherit' onClick={undo}>
