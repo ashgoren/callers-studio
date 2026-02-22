@@ -15,19 +15,19 @@ const getPrograms = async () => {
 };
 
 const getProgram = async (id: number) => {
-  const { data, error } = await supabase.from('programs').select(PROGRAM_SELECT).eq('id', id).single();
+  const { data, error } = await supabase.from('programs').select(PROGRAM_SELECT).eq('id', id).order('order', { referencedTable: 'programs_dances', ascending: true }).single();
   if (error) throw new Error(error.message);
   return data as Program;
 };
 
 const updateProgram = async (id: number, updates: ProgramUpdate) => {
-  const { data, error } = await supabase.from('programs').update(updates).eq('id', id).select(PROGRAM_SELECT).single();
+  const { data, error } = await supabase.from('programs').update(updates).eq('id', id).select(PROGRAM_SELECT).order('order', { referencedTable: 'programs_dances', ascending: true }).single();
   if (error) throw new Error(error.message);
   return data as Program;
 };
 
 const createProgram = async (newProgram: ProgramInsert) => {
-  const { data, error } = await supabase.from('programs').insert(newProgram).select(PROGRAM_SELECT).single();
+  const { data, error } = await supabase.from('programs').insert(newProgram).select(PROGRAM_SELECT).order('order', { referencedTable: 'programs_dances', ascending: true }).single();
   if (error) throw new Error(error.message);
   return data as Program;
 };
