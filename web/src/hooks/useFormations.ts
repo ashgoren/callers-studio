@@ -1,9 +1,14 @@
-import { useQuery } from '@tanstack/react-query'
-import { getFormations } from '@/lib/api/formations'
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
+import type { FormationRow } from '@/lib/types/database';
 
 export const useFormations = () => {
   return useQuery({
     queryKey: ['formations'],
-    queryFn: getFormations,
+    queryFn: async () => {
+      const { data, error } = await supabase.from('formations').select('*').order('sort_order', { ascending: true });
+      if (error) throw new Error(error.message);
+      return data as FormationRow[];
+    },
   });
 };

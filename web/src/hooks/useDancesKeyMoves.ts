@@ -1,6 +1,29 @@
 import { useNotify } from '@/hooks/useNotify';
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { addKeyMoveToDance, removeKeyMoveFromDance } from '@/lib/api/dancesKeyMoves';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
+
+const addKeyMoveToDance = async (danceId: number, keyMoveId: number) => {
+  const { data, error } = await supabase
+    .from('dances_key_moves')
+    .insert({ dance_id: danceId, key_move_id: keyMoveId })
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+};
+
+const removeKeyMoveFromDance = async (danceId: number, keyMoveId: number) => {
+  const { data, error } = await supabase
+    .from('dances_key_moves')
+    .delete()
+    .eq('dance_id', danceId)
+    .eq('key_move_id', keyMoveId)
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+};
+
 
 export const useAddKeyMoveToDance = () => {
   const { toastError } = useNotify();
@@ -12,7 +35,6 @@ export const useAddKeyMoveToDance = () => {
       queryClient.invalidateQueries({ queryKey: ['dance', danceId] });
       queryClient.invalidateQueries({ queryKey: ['dances'] });
       queryClient.invalidateQueries({ queryKey: ['key_moves'] });
-      // success('Key move added to dance');
     },
     onError: (err: Error) => toastError(err.message || 'Error adding key move to dance')
   });
@@ -28,7 +50,6 @@ export const useRemoveKeyMoveFromDance = () => {
       queryClient.invalidateQueries({ queryKey: ['dance', danceId] });
       queryClient.invalidateQueries({ queryKey: ['dances'] });
       queryClient.invalidateQueries({ queryKey: ['key_moves'] });
-      // success('Key move removed from dance');
     },
     onError: (err: Error) => toastError(err.message || 'Error removing key move from dance')
   });

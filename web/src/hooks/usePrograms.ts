@@ -1,7 +1,42 @@
 import { useNotify } from '@/hooks/useNotify';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getProgram, getPrograms, updateProgram, createProgram, deleteProgram } from '@/lib/api/programs'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
 import type { Program, ProgramInsert, ProgramUpdate } from '@/lib/types/database';
+
+const PROGRAM_SELECT = '*, programs_dances(id, order, dance:dances(*))';
+
+const getPrograms = async () => {
+  const { data, error } = await supabase
+    .from('programs')
+    .select(PROGRAM_SELECT)
+    .order('order', { referencedTable: 'programs_dances', ascending: true });
+  if (error) throw new Error(error.message);
+  return data as Program[];
+};
+
+const getProgram = async (id: number) => {
+  const { data, error } = await supabase.from('programs').select(PROGRAM_SELECT).eq('id', id).single();
+  if (error) throw new Error(error.message);
+  return data as Program;
+};
+
+const updateProgram = async (id: number, updates: ProgramUpdate) => {
+  const { data, error } = await supabase.from('programs').update(updates).eq('id', id).select(PROGRAM_SELECT).single();
+  if (error) throw new Error(error.message);
+  return data as Program;
+};
+
+const createProgram = async (newProgram: ProgramInsert) => {
+  const { data, error } = await supabase.from('programs').insert(newProgram).select(PROGRAM_SELECT).single();
+  if (error) throw new Error(error.message);
+  return data as Program;
+};
+
+const deleteProgram = async (id: number) => {
+  const { error } = await supabase.from('programs').delete().eq('id', id);
+  if (error) throw new Error(error.message);
+};
+
 
 export const usePrograms = () => {
   return useQuery({
