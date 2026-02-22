@@ -1,25 +1,5 @@
-import { supabase } from '@/lib/supabase'
+import { createJunctionApi } from './auxiliaryFactory';
 
-export const addChoreographerToDance = async (danceId: number, choreographerId: number) => {
-  const { data, error } = await supabase
-    .from('dances_choreographers')
-    .insert({ dance_id: danceId, choreographer_id: choreographerId })
-    .select()
-    .single()
-
-  if (error) throw new Error(error.message);
-  return data;
-};
-
-export const removeChoreographerFromDance = async (danceId: number, choreographerId: number) => {
-  const { data, error } = await supabase
-    .from('dances_choreographers')
-    .delete()
-    .eq('dance_id', danceId)
-    .eq('choreographer_id', choreographerId)
-    .select()
-    .single()
-
-  if (error) throw new Error(error.message);
-  return data;
-};
+const { add, remove } = createJunctionApi('dances_choreographers', 'choreographer_id');
+export const addChoreographerToDance = add;
+export const removeChoreographerFromDance = remove;
