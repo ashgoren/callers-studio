@@ -15,10 +15,9 @@ import { Spinner, ErrorMessage } from '@/components/shared';
 import { columns, newRecord } from './config';
 import { RecordView } from '@/components/RecordView';
 import { RecordEdit } from '@/components/RecordEdit';
-import { RelationList } from '@/components/RelationList';
 import { useDrawerState } from '@/contexts/DrawerContext';
 import { useUndoActions, dbRecord, beforeValues, relationOps } from '@/contexts/UndoContext';
-import type { DanceInsert, DanceUpdate, Dance as DanceType } from '@/lib/types/database';
+import type { DanceInsert, DanceUpdate } from '@/lib/types/database';
 
 export const Dance = ({ id }: { id?: number }) => {
   const { mode } = useDrawerState();
@@ -138,139 +137,63 @@ export const Dance = ({ id }: { id?: number }) => {
     toastSuccess('Dance deleted');
   };
 
-  if (mode === 'create') {
-    return (
-      <RecordEdit
-        data={newRecord}
-        columns={columns}
-        title={'New Dance'}
-        onSave={handleSave}
-        hasPendingRelationChanges={pendingChoreographers.hasPendingChanges || pendingKeyMoves.hasPendingChanges || pendingVibes.hasPendingChanges}
-        selectOptions={selectOptions}
-      >
-        <RelationEditor
-          model='choreographer'
-          label='Choreographers'
-          relations={[] as DanceType['dances_choreographers']}
-          getRelationId={dc => dc.choreographer.id}
-          getRelationLabel={dc => dc.choreographer.name}
-          options={choreographers ?? []}
-          getOptionLabel={choreographer => choreographer.name}
-          getOptionId={choreographer => choreographer.id}
-          pending={pendingChoreographers}
-        />
-        <RelationEditor
-          model='key_move'
-          label='Key Moves'
-          relations={[] as DanceType['dances_key_moves']}
-          getRelationId={dkm => dkm.key_move.id}
-          getRelationLabel={dkm => dkm.key_move.name}
-          options={keyMoves ?? []}
-          getOptionLabel={keyMove => keyMove.name}
-          getOptionId={keyMove => keyMove.id}
-          pending={pendingKeyMoves}
-        />
-        <RelationEditor
-          model='vibe'
-          label='Vibes'
-          relations={[] as DanceType['dances_vibes']}
-          getRelationId={dv => dv.vibe.id}
-          getRelationLabel={dv => dv.vibe.name}
-          options={vibes ?? []}
-          getOptionLabel={vibe => vibe.name}
-          getOptionId={vibe => vibe.id}
-          pending={pendingVibes}
-        />
-      </RecordEdit>
-    );
+  if (mode !== 'create') {
+    if (isLoading) return <Spinner />;
+    if (error) return <ErrorMessage error={error} />;
+    if (!dance) return <ErrorMessage error={new Error('Dance not found')} />;
   }
 
-  if (isLoading) return <Spinner />;
-  if (error) return <ErrorMessage error={error} />;
-  if (!dance) return <ErrorMessage error={new Error('Dance not found')} />;
-
-  if (mode === 'edit') {
+  if (mode === 'view') {
     return (
-      <RecordEdit
-        data={dance}
+      <RecordView
+        data={dance!}
         columns={columns}
-        title={`Edit: ${dance.title}`}
-        onSave={handleSave}
-        hasPendingRelationChanges={pendingChoreographers.hasPendingChanges || pendingKeyMoves.hasPendingChanges || pendingVibes.hasPendingChanges}
-        selectOptions={selectOptions}
-      >
-        <RelationEditor
-          model='choreographer'
-          label='Choreographers'
-          relations={dance.dances_choreographers}
-          getRelationId={dc => dc.choreographer.id}
-          getRelationLabel={dc => dc.choreographer.name}
-          options={choreographers ?? []}
-          getOptionId={choreographer => choreographer.id}
-          getOptionLabel={choreographer => choreographer.name}
-          pending={pendingChoreographers}
-        />
-        <RelationEditor
-          model='key_move'
-          label='Key Moves'
-          relations={dance.dances_key_moves}
-          getRelationId={dkm => dkm.key_move.id}
-          getRelationLabel={dkm => dkm.key_move.name}
-          options={keyMoves ?? []}
-          getOptionLabel={keyMove => keyMove.name}
-          getOptionId={keyMove => keyMove.id}
-          pending={pendingKeyMoves}
-        />
-        <RelationEditor
-          model='vibe'
-          label='Vibes'
-          relations={dance.dances_vibes}
-          getRelationId={dv => dv.vibe.id}
-          getRelationLabel={dv => dv.vibe.name}
-          options={vibes ?? []}
-          getOptionLabel={vibe => vibe.name}
-          getOptionId={vibe => vibe.id}
-          pending={pendingVibes}
-        />
-      </RecordEdit>
+        title={`Dance: ${dance!.title}`}
+        onDelete={handleDelete}
+      />
     );
   }
 
   return (
-    <RecordView
-      data={dance}
+    <RecordEdit
+      data={dance ?? newRecord}
       columns={columns}
-      title={`Dance: ${dance.title}`}
-      onDelete={handleDelete}
-    >
-      <RelationList
-        model='program'
-        label='🔗 Programs'
-        relations={dance.programs_dances}
-        getRelationId={(pd) => pd.program.id}
-        getRelationLabel={(pd) => `${pd.program.date} - ${pd.program.location}`}
-      />
-      <RelationList
-        model='choreographer'
-        label='🔗 Choreographers'
-        relations={dance.dances_choreographers}
-        getRelationId={(dc) => dc.choreographer.id}
-        getRelationLabel={(dc) => dc.choreographer.name}
-      />
-      <RelationList
-        model='key_move'
-        label='🔗 Key Moves'
-        relations={dance.dances_key_moves}
-        getRelationId={(dkm) => dkm.key_move.id}
-        getRelationLabel={(dkm) => dkm.key_move.name}
-      />
-      <RelationList
-        model='vibe'
-        label='🔗 Vibes'
-        relations={dance.dances_vibes}
-        getRelationId={(dv) => dv.vibe.id}
-        getRelationLabel={(dv) => dv.vibe.name}
-      />
-    </RecordView>
+      title={dance ? `Edit: ${dance.title}` : 'New Dance'}
+      onSave={handleSave}
+      hasPendingRelationChanges={pendingChoreographers.hasPendingChanges || pendingKeyMoves.hasPendingChanges || pendingVibes.hasPendingChanges}
+      selectOptions={selectOptions}
+      relationEditors={{
+        choreographers: <RelationEditor
+          model='choreographer' label='Choreographers'
+          relations={dance?.dances_choreographers ?? []}
+          getRelationId={dc => dc.choreographer.id}
+          getRelationLabel={dc => dc.choreographer.name}
+          options={choreographers ?? []}
+          getOptionId={choreographer => choreographer.id}
+          getOptionLabel={choreographer => choreographer.name}
+          pending={pendingChoreographers}
+        />,
+        keyMoves: <RelationEditor
+          model='key_move' label='Key Moves'
+          relations={dance?.dances_key_moves ?? []}
+          getRelationId={dkm => dkm.key_move.id}
+          getRelationLabel={dkm => dkm.key_move.name}
+          options={keyMoves ?? []}
+          getOptionLabel={keyMove => keyMove.name}
+          getOptionId={keyMove => keyMove.id}
+          pending={pendingKeyMoves}
+        />,
+        vibes: <RelationEditor
+          model='vibe' label='Vibes'
+          relations={dance?.dances_vibes ?? []}
+          getRelationId={dv => dv.vibe.id}
+          getRelationLabel={dv => dv.vibe.name}
+          options={vibes ?? []}
+          getOptionLabel={vibe => vibe.name}
+          getOptionId={vibe => vibe.id}
+          pending={pendingVibes}
+        />,
+      }}
+    />
   );
 };

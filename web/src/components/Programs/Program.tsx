@@ -7,7 +7,6 @@ import { useDances } from '@/hooks/useDances';
 import { useAddDanceToProgram, useRemoveDanceFromProgram } from '@/hooks/useProgramsDances';
 import { RecordView } from '@/components/RecordView';
 import { RecordEdit } from '@/components/RecordEdit';
-import { RelationList } from '@/components/RelationList';
 import { ProgramDancesEditor } from './ProgramDancesEditor';
 import { useDrawerState } from '@/contexts/DrawerContext';
 import { useUndoActions, dbRecord, beforeValues, relationOps } from '@/contexts/UndoContext';
@@ -97,61 +96,38 @@ export const Program = ({ id }: { id?: number }) => {
     toastSuccess('Program deleted');
   };
 
-  if (mode === 'create') {
-    return (
-      <RecordEdit
-        data={newRecord}
-        columns={columns}
-        title={'New Program'}
-        onSave={handleSave}
-        hasPendingRelationChanges={pending.hasPendingChanges}
-      >
-        <ProgramDancesEditor
-          programDances={[]}
-          dances={dances ?? []}
-          pending={pending}
-        />
-      </RecordEdit>
-    );
+  if (mode !== 'create') {
+    if (isLoading) return <Spinner />;
+    if (error) return <ErrorMessage error={error} />;
+    if (!program) return <ErrorMessage error={new Error('Program not found')} />;
   }
 
-  if (isLoading) return <Spinner />;
-  if (error) return <ErrorMessage error={error} />;
-  if (!program) return <ErrorMessage error={new Error('Program not found')} />;
-
-  if (mode === 'edit') {
+  if (mode === 'view') {
     return (
-      <RecordEdit
-        data={program}
+      <RecordView
+        data={program!}
         columns={columns}
-        title={`Edit Program: ${formatDate(program)}`}
-        onSave={handleSave}
-        hasPendingRelationChanges={pending.hasPendingChanges}
-      >
-        <ProgramDancesEditor
-          programDances={program.programs_dances}
-          dances={dances ?? []}
-          pending={pending}
-        />
-      </RecordEdit>
+        title={`Program: ${formatDate(program!)}`}
+        onDelete={handleDelete}
+      />
     );
   }
 
   return (
-    <RecordView
-      data={program}
+    <RecordEdit
+      data={program ?? newRecord}
       columns={columns}
-      title={`Program: ${formatDate(program)}`}
-      onDelete={handleDelete}
-    >
-      <RelationList
-        model='dance'
-        label='🔗 Dances'
-        relations={program.programs_dances}
-        getRelationId={(pd) => pd.dance.id}
-        getRelationLabel={(pd) => `${pd.order} - ${pd.dance.title}`}
-      />
-    </RecordView>
+      title={program ? `Edit Program: ${formatDate(program)}` : 'New Program'}
+      onSave={handleSave}
+      hasPendingRelationChanges={pending.hasPendingChanges}
+      relationEditors={{
+        dances: <ProgramDancesEditor
+          programDances={program?.programs_dances ?? []}
+          dances={dances ?? []}
+          pending={pending}
+        />,
+      }}
+    />
   );
 };
 

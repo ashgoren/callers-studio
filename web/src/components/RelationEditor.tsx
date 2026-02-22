@@ -35,7 +35,7 @@ export const RelationEditor = <TRelation, TOption>(props: RelationEditorProps<TR
   const availableOptions = computeAvailableOptions(props);
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', mt: 4 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
       <Typography variant='caption' color='text.secondary'>
         {label}
       </Typography>

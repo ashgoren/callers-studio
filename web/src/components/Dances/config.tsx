@@ -22,7 +22,7 @@ export const newRecord: DanceInsert = {
 };
 
 
-// TABLE CONFIG
+// TABLE & DRAWER CONFIG
 
 export const columns: MRT_ColumnDef<Dance>[] = [
   {
@@ -31,14 +31,8 @@ export const columns: MRT_ColumnDef<Dance>[] = [
     Cell: ({row}) => linkTitle(row.original.title, row.original.url),
     size: 250,
     minSize: 100,
+    meta: { inputType: 'text' },
   },
-  // {
-  //   accessorKey: 'id',
-  //   header: 'ID',
-  //   enableColumnFilter: false,
-  //   size: 120,
-  //   minSize: 55,
-  // },
   {
     accessorKey: 'url',
     header: 'URL',
@@ -46,9 +40,7 @@ export const columns: MRT_ColumnDef<Dance>[] = [
     enableSorting: false,
     size: 120,
     minSize: 50,
-    meta: {
-      inputType: 'text',
-    }
+    meta: { inputType: 'text' }
   },
   {
     id: 'choreographers',
@@ -56,7 +48,8 @@ export const columns: MRT_ColumnDef<Dance>[] = [
     enableColumnFilter: false,
     size: 200,
     minSize: 170,
-    Cell: ({ row }) => row.original.dances_choreographers.map(dc => dc.choreographer.name).join(', ')
+    Cell: ({ row }) => row.original.dances_choreographers.map(dc => dc.choreographer.name).join(', '),
+    meta: { inputType: 'relation' },
   },
   {
     accessorKey: 'dance_type_id',
@@ -65,7 +58,7 @@ export const columns: MRT_ColumnDef<Dance>[] = [
     enableColumnFilter: false,
     size: 175,
     minSize: 100,
-    meta: { inputType: 'select' as const },
+    meta: { inputType: 'select' },
   },
   {
     accessorKey: 'formation_id',
@@ -74,7 +67,7 @@ export const columns: MRT_ColumnDef<Dance>[] = [
     enableColumnFilter: false,
     size: 175,
     minSize: 100,
-    meta: { inputType: 'select' as const },
+    meta: { inputType: 'select' },
   },
   {
     accessorKey: 'progression_id',
@@ -83,7 +76,7 @@ export const columns: MRT_ColumnDef<Dance>[] = [
     enableColumnFilter: false,
     size: 175,
     minSize: 100,
-    meta: { inputType: 'select' as const },
+    meta: { inputType: 'select' },
   },
   {
     id: 'keyMoves',
@@ -91,7 +84,8 @@ export const columns: MRT_ColumnDef<Dance>[] = [
     enableColumnFilter: false,
     size: 200,
     minSize: 170,
-    Cell: ({ row }) => row.original.dances_key_moves.map(dkm => dkm.key_move.name).join(', ')
+    Cell: ({ row }) => row.original.dances_key_moves.map(dkm => dkm.key_move.name).join(', '),
+    meta: { inputType: 'relation' },
   },
   {
     id: 'vibes',
@@ -99,7 +93,8 @@ export const columns: MRT_ColumnDef<Dance>[] = [
     enableColumnFilter: false,
     size: 200,
     minSize: 170,
-    Cell: ({ row }) => row.original.dances_vibes.map(dv => dv.vibe.name).join(', ')
+    Cell: ({ row }) => row.original.dances_vibes.map(dv => dv.vibe.name).join(', '),
+    meta: { inputType: 'relation' },
   },
   {
     accessorKey: 'difficulty',
@@ -107,6 +102,7 @@ export const columns: MRT_ColumnDef<Dance>[] = [
     size: 150,
     minSize: 50,
     filterFn: 'equalsString',
+    meta: { inputType: 'number' },
   },
   {
     accessorKey: 'notes',
@@ -122,6 +118,7 @@ export const columns: MRT_ColumnDef<Dance>[] = [
         whiteSpace: 'nowrap',
       },
     },
+    meta: { inputType: 'text' }
   },
   {
     accessorKey: 'place_in_program',
@@ -130,6 +127,7 @@ export const columns: MRT_ColumnDef<Dance>[] = [
     minSize: 150,
     filterFn: 'includesString',
     Cell: ({ row }) => row.original.place_in_program ? <TooltipCell content={row.original.place_in_program} /> : null,
+    meta: { inputType: 'text' }
   },
   {
     accessorKey: 'moves',
@@ -138,6 +136,7 @@ export const columns: MRT_ColumnDef<Dance>[] = [
     minSize: 120,
     filterFn: 'includesString',
     Cell: ({ row }) => row.original.moves ? <TooltipCell content={row.original.moves} /> : null,
+    meta: { inputType: 'text' }
   },
   {
     accessorKey: 'swing_16',
@@ -146,6 +145,7 @@ export const columns: MRT_ColumnDef<Dance>[] = [
     minSize: 120,
     filterFn: 'equalsString',
     Cell: ({ row }) => row.original.swing_16 ? 'true' : row.original.swing_16 === false ? 'false' : '',
+    meta: { inputType: 'boolean' }
   },
   {
     accessorKey: 'video',
@@ -155,6 +155,7 @@ export const columns: MRT_ColumnDef<Dance>[] = [
     enableSorting: false,
     size: 120,
     minSize: 50,
+    meta: { inputType: 'text' }
   },
   {
     id: 'programs',
@@ -167,7 +168,8 @@ export const columns: MRT_ColumnDef<Dance>[] = [
       model='program'
       getId={(joinRow) => joinRow.program.id}
       getLabel={(joinRow) => `${joinRow.program.date} - ${joinRow.program.location}`}
-    />
+    />,
+    meta: { inputType: 'relation' },
   },
   {
     accessorKey: 'created_at',
@@ -176,16 +178,9 @@ export const columns: MRT_ColumnDef<Dance>[] = [
     Cell: ({ row }) => new Date(row.original.created_at).toISOString().split('T')[0],
     size: 170,
     minSize: 100,
+    meta: { inputType: 'date', readonly: true },
   }
 ]
-
-const linkTitle = (title: string, url?: string | null) => {
-  return url ? <ExternalLink url={url} title={title} /> : title;
-};
-
-const linkVideo = (video?: string | null) => {
-  return video ? <ExternalLink url={video} title='Video' /> : null;
-};
 
 export const tableInitialState = {
   sorting: [{ id: 'created_at', desc: true }],
@@ -219,4 +214,13 @@ export const queryFields = [
 export const defaultQuery = {
   combinator: 'and',
   rules: [{ field: 'title', operator: 'contains', value: '' }]
-}
+};
+
+
+// HELPERS
+
+const linkTitle = (title: string, url?: string | null) =>
+  url ? <ExternalLink url={url} title={title} /> : title;
+
+const linkVideo = (video?: string | null) =>
+  video ? <ExternalLink url={video} title='Video' /> : null;

@@ -14,11 +14,10 @@ type RecordViewProps<TData extends MRT_RowData> = {
   onDelete: () => void;
   canDelete?: boolean;
   deleteDisabledReason?: string;
-  children?: React.ReactNode;
 };
 
-export const RecordView = <TData extends Record<string, any>>({ data, columns, title, children, ...deleteProps }: RecordViewProps<TData>) => {
-  const tableData = useMemo(() => [data], [data]); // Wrap data in an array for single row
+export const RecordView = <TData extends Record<string, any>>({ data, columns, title, ...deleteProps }: RecordViewProps<TData>) => {
+  const tableData = useMemo(() => [data], [data]);
 
   // Custom cell renderer to handle MRT's Cell rendering outside of the table context
   const renderCell = (cell: MRT_Cell<TData, unknown>) => {
@@ -35,10 +34,7 @@ export const RecordView = <TData extends Record<string, any>>({ data, columns, t
     return (cell.getValue() as ReactNode) ?? '';
   };
 
-  const table = useMaterialReactTable({
-    data: tableData,
-    columns,
-  });
+  const table = useMaterialReactTable({ data: tableData, columns });
   const row = table.getRowModel().rows[0];
 
   return (
@@ -46,18 +42,10 @@ export const RecordView = <TData extends Record<string, any>>({ data, columns, t
       title={title || 'Details'}
       footer={<Footer {...deleteProps} />}
     >
-      {/* Fields */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {row.getAllCells().map((cell) => {
-          const column = cell.column;
-          const columnDef = column.columnDef as MRT_ColumnDef<TData>;
-
-          if (column.id === 'id') return null;
-          if (!('accessorKey' in columnDef)) return null;  // skip display-only columns
-
-          const label = typeof columnDef.header === 'string'
-            ? columnDef.header
-            : column.id;
+          const columnDef = cell.column.columnDef as MRT_ColumnDef<TData>;
+          const label = typeof columnDef.header === 'string' ? columnDef.header : cell.column.id;
 
           return (
             <Box key={cell.id}>
@@ -71,9 +59,6 @@ export const RecordView = <TData extends Record<string, any>>({ data, columns, t
           );
         })}
       </Box>
-
-      {/* Relation fields (linked items) */}
-      {children}
     </DrawerLayout>
   );
 };

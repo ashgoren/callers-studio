@@ -18,11 +18,10 @@ Supabase runs locally at `http://127.0.0.1:54321`. Credentials are in `.env.loca
 ## Architecture Overview
 
 ```
-Supabase → src/lib/api/ → src/hooks/ → Components
+Supabase → src/hooks/ → Components
 ```
 
-- **`src/lib/api/`** — Thin Supabase query functions. Primary models eager-load relations via `.select('*, relation(*)')`. Auxiliary tables use lightweight selects (junction IDs only).
-- **`src/hooks/`** — TanStack Query v5 wrappers. Handle CRUD, caching, and invalidation.
+- **`src/hooks/`** — TanStack Query v5 wrappers with Supabase calls inlined. Handle CRUD, caching, and invalidation. Primary models eager-load relations via `.select('*, relation(*)')`. Auxiliary tables use lightweight selects (junction IDs only for delete-guarding).
 - **`src/components/{Entity}/config.tsx`** — Column definitions, default form values, query builder config (primary models only).
 - **`TablePage`** — Generic wrapper connecting a data hook + column config to Material React Table. Used by primary models (Dances, Programs).
 - **`RecordDrawer`** — Right-side drawer for view/edit/create. Managed by `DrawerContext`.
@@ -67,15 +66,17 @@ export type KeyMoveInsert = Tables['key_moves']['Insert'];
 export type KeyMoveUpdate = Tables['key_moves']['Update'];
 ```
 
-#### 3. API Layer — `src/lib/api/keyMoves.ts`
+#### 3. Query Hook — `src/hooks/useKeyMoves.ts`
 
-No single-record fetch needed. Select only junction IDs (not full related records) if delete-guarding:
+Supabase functions are module-level private functions in the same file. No single-record hook, no `select` transform:
 
 ```typescript
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNotify } from '@/hooks/useNotify';
 import { supabase } from '@/lib/supabase';
 import type { KeyMove, KeyMoveInsert, KeyMoveUpdate } from '@/lib/types/database';
 
-export const getKeyMoves = async () => {
+const getKeyMoves = async () => {
   const { data, error } = await supabase
     .from('key_moves')
     .select('*, dances_key_moves(id)')   // omit join entirely if no delete-guarding
@@ -84,73 +85,27 @@ export const getKeyMoves = async () => {
   return data as KeyMove[];
 };
 
-export const createKeyMove = async (keyMove: KeyMoveInsert) => {
-  const { data, error } = await supabase.from('key_moves').insert(keyMove).select('*').single();
-  if (error) throw new Error(error.message);
-  return data;
-};
-
-export const updateKeyMove = async (id: number, updates: KeyMoveUpdate) => {
-  const { data, error } = await supabase.from('key_moves').update(updates).eq('id', id).select('*').single();
-  if (error) throw new Error(error.message);
-  return data;
-};
-
-export const deleteKeyMove = async (id: number) => {
-  const { error } = await supabase.from('key_moves').delete().eq('id', id);
-  if (error) throw new Error(error.message);
-};
-```
-
-#### 4. Query Hook — `src/hooks/useKeyMoves.ts`
-
-No single-record hook, no `select` transform:
-
-```typescript
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNotify } from './useNotify';
-import { getKeyMoves, createKeyMove, updateKeyMove, deleteKeyMove } from '@/lib/api/keyMoves';
-import type { KeyMoveInsert, KeyMoveUpdate } from '@/lib/types/database';
+const createKeyMove = async (item: KeyMoveInsert) => { ... };
+const updateKeyMove = async (id: number, updates: KeyMoveUpdate) => { ... };
+const deleteKeyMove = async (id: number) => { ... };
 
 export const useKeyMoves = () =>
   useQuery({ queryKey: ['key_moves'], queryFn: getKeyMoves });
 
 export const useCreateKeyMove = () => {
-  const queryClient = useQueryClient();
   const { toastError } = useNotify();
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (keyMove: KeyMoveInsert) => createKeyMove(keyMove),
+    mutationFn: (item: KeyMoveInsert) => createKeyMove(item),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['key_moves'] }),
     onError: (err: Error) => toastError(err.message),
   });
 };
 
-export const useUpdateKeyMove = () => {
-  const queryClient = useQueryClient();
-  const { toastError } = useNotify();
-  return useMutation({
-    mutationFn: ({ id, updates }: { id: number; updates: KeyMoveUpdate }) => updateKeyMove(id, updates),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['key_moves'] });
-    },
-    onError: (err: Error) => toastError(err.message),
-  });
-};
-
-export const useDeleteKeyMove = () => {
-  const queryClient = useQueryClient();
-  const { toastError } = useNotify();
-  return useMutation({
-    mutationFn: ({ id }: { id: number }) => deleteKeyMove(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['key_moves'] });
-    },
-    onError: (err: Error) => toastError(err.message),
-  });
-};
+// useUpdateKeyMove, useDeleteKeyMove follow the same pattern
 ```
 
-#### 5. Settings List Component — `src/components/Settings/KeyMovesList.tsx`
+#### 4. Settings List Component — `src/components/Settings/KeyMovesList.tsx`
 
 Copy the pattern from `ChoreographersList.tsx`. Key elements:
 
@@ -163,7 +118,7 @@ Copy the pattern from `ChoreographersList.tsx`. Key elements:
 - Add button at bottom sets `editingId = 'new'`
 - `handleSave` calls create or update; errors are already toasted by the hook
 
-#### 6. Wire Up Settings Page — `src/components/Settings/SettingsPage.tsx`
+#### 5. Wire Up Settings Page — `src/components/Settings/SettingsPage.tsx`
 
 Add to `SETTINGS_ITEMS`:
 
@@ -171,13 +126,13 @@ Add to `SETTINGS_ITEMS`:
 { label: 'Key Moves', description: 'Manage key move tags', path: '/settings/key-moves', icon: <MusicNoteIcon /> },
 ```
 
-#### 7. Export — `src/components/Settings/index.ts`
+#### 6. Export — `src/components/Settings/index.ts`
 
 ```typescript
 export * from './KeyMovesList';
 ```
 
-#### 8. Add Route — `src/App.tsx`
+#### 7. Add Route — `src/App.tsx`
 
 ```typescript
 import { KeyMovesList } from './components/Settings';
@@ -188,17 +143,16 @@ import { KeyMovesList } from './components/Settings';
 
 No nav changes needed — already under `/settings`.
 
-#### 9. Surface in Dance Table and Drawer (if applicable)
+#### 8. Surface in Dance Table and Drawer (if applicable)
 
 If this auxiliary table should appear on dance records, follow the steps in [Adding a New Relation Between Tables](#adding-a-new-relation-between-tables) — specifically:
 
 - Add the junction array to the `Dance` type in `src/lib/types/database.ts`
-- Update `.select()` in `src/lib/api/dances.ts` to eager-load the relation
-- Create junction table API functions in `src/lib/api/dances{Model}s.ts` (`add{Model}ToDance`, `remove{Model}FromDance`)
-- Create mutation hooks in `src/hooks/useDances{Model}s.ts`
+- Update the select string in `src/hooks/useDances.ts` to eager-load the relation
+- Create mutation hooks in `src/hooks/useDances{Model}s.ts` with inlined Supabase add/remove functions
 - Update `buildRelationsColumns` in `src/hooks/useDances.ts` with a computed name string (if users should filter by it)
 - Add a `RelationCell` column to `src/components/Dances/config.tsx`
-- Add `RelationEditor` (edit/create modes) and `RelationList` (view mode) to `src/components/Dances/Dance.tsx`
+- Add `RelationEditor` to the `relationEditors` prop in `src/components/Dances/Dance.tsx` (view mode is automatic via `RecordView`)
 - Add computed field to `queryFields` in `config.tsx` (if filtering needed)
 
 ---
@@ -230,53 +184,21 @@ export type VenueUpdate = Tables['venues']['Update'];
 
 `*Row` is the bare DB row. `*` extends it with relation arrays. `*Insert`/`*Update` come directly from the generated types.
 
-#### 3. API Layer — `src/lib/api/venues.ts`
+#### 3. Query Hook — `src/hooks/useVenues.ts`
 
-Create CRUD functions. Always eager-load relations needed in the UI:
-
-```typescript
-import { supabase } from '@/lib/supabase';
-import type { Venue, VenueInsert, VenueUpdate } from '@/lib/types/database';
-
-export const getVenues = async () => {
-  const { data, error } = await supabase.from('venues').select('*');
-  if (error) throw new Error(error.message);
-  return data as Venue[];
-};
-
-export const getVenue = async (id: number) => {
-  const { data, error } = await supabase.from('venues').select('*').eq('id', id).single();
-  if (error) throw new Error(error.message);
-  return data as Venue;
-};
-
-export const createVenue = async (venue: VenueInsert) => {
-  const { data, error } = await supabase.from('venues').insert(venue).select('*').single();
-  if (error) throw new Error(error.message);
-  return data as Venue;
-};
-
-export const updateVenue = async (id: number, updates: VenueUpdate) => {
-  const { data, error } = await supabase.from('venues').update(updates).eq('id', id).select('*').single();
-  if (error) throw new Error(error.message);
-  return data as Venue;
-};
-
-export const deleteVenue = async (id: number) => {
-  const { error } = await supabase.from('venues').delete().eq('id', id);
-  if (error) throw new Error(error.message);
-};
-```
-
-#### 4. Query Hook — `src/hooks/useVenues.ts`
-
-Wrap the API layer with TanStack Query. Invalidate all affected query keys on mutation:
+Supabase functions are module-level private functions in the same file. Invalidate all affected query keys on mutation:
 
 ```typescript
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNotify } from './useNotify';
-import { getVenues, getVenue, createVenue, updateVenue, deleteVenue } from '@/lib/api/venues';
-import type { VenueInsert, VenueUpdate } from '@/lib/types/database';
+import { useNotify } from '@/hooks/useNotify';
+import { supabase } from '@/lib/supabase';
+import type { Venue, VenueInsert, VenueUpdate } from '@/lib/types/database';
+
+const getVenues = async () => { ... };
+const getVenue = async (id: number) => { ... };
+const createVenue = async (venue: VenueInsert) => { ... };
+const updateVenue = async (id: number, updates: VenueUpdate) => { ... };
+const deleteVenue = async (id: number) => { ... };
 
 export const useVenues = () =>
   useQuery({ queryKey: ['venues'], queryFn: getVenues });
@@ -285,8 +207,8 @@ export const useVenue = (id: number) =>
   useQuery({ queryKey: ['venue', id], queryFn: () => getVenue(id), enabled: !!id });
 
 export const useCreateVenue = () => {
-  const queryClient = useQueryClient();
   const { toastError } = useNotify();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (venue: VenueInsert) => createVenue(venue),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['venues'] }),
@@ -294,31 +216,10 @@ export const useCreateVenue = () => {
   });
 };
 
-export const useUpdateVenue = () => {
-  const queryClient = useQueryClient();
-  const { toastError } = useNotify();
-  return useMutation({
-    mutationFn: ({ id, updates }: { id: number; updates: VenueUpdate }) => updateVenue(id, updates),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['venue', id] });
-      queryClient.invalidateQueries({ queryKey: ['venues'] });
-    },
-    onError: (err: Error) => toastError(err.message),
-  });
-};
-
-export const useDeleteVenue = () => {
-  const queryClient = useQueryClient();
-  const { toastError } = useNotify();
-  return useMutation({
-    mutationFn: ({ id }: { id: number }) => deleteVenue(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['venues'] }),
-    onError: (err: Error) => toastError(err.message),
-  });
-};
+// useUpdateVenue, useDeleteVenue follow the same pattern
 ```
 
-#### 5. Config — `src/components/Venues/config.tsx`
+#### 4. Config — `src/components/Venues/config.tsx`
 
 See [Adding Fields to a Config](#adding-fields-to-a-config) below for full details on column definitions.
 
@@ -353,7 +254,7 @@ export const defaultQuery = {
 };
 ```
 
-#### 6. Detail Component — `src/components/Venues/Venue.tsx`
+#### 5. Detail Component — `src/components/Venues/Venue.tsx`
 
 Orchestrates view/edit/create for one record:
 
@@ -399,7 +300,7 @@ export const Venue = ({ id }: { id?: number }) => {
 };
 ```
 
-#### 7. Table Component — `src/components/Venues/Venues.tsx`
+#### 6. Table Component — `src/components/Venues/Venues.tsx`
 
 ```typescript
 import { useEffect } from 'react';
@@ -424,7 +325,7 @@ export const Venues = () => {
 };
 ```
 
-#### 8. Index File — `src/components/Venues/index.ts`
+#### 7. Index File — `src/components/Venues/index.ts`
 
 ```typescript
 export * from './Venue';
@@ -432,7 +333,7 @@ export * from './Venues';
 export * from './config';
 ```
 
-#### 9. Wire Up the Drawer — `src/components/RecordDrawer.tsx`
+#### 8. Wire Up the Drawer — `src/components/RecordDrawer.tsx`
 
 Add the component to the `DETAIL_COMPONENTS` map:
 
@@ -447,7 +348,7 @@ const DETAIL_COMPONENTS: Record<string, React.ComponentType<{ id?: number }>> = 
 };
 ```
 
-#### 10. Add a Route — `src/App.tsx`
+#### 9. Add a Route — `src/App.tsx`
 
 ```typescript
 import { Venues } from './components/Venues';
@@ -456,7 +357,7 @@ import { Venues } from './components/Venues';
 <Route path='/venues' element={<Venues />} />
 ```
 
-#### 11. Add Nav Link — `src/components/layouts/NavBar.tsx`
+#### 10. Add Nav Link — `src/components/layouts/NavBar.tsx`
 
 Add `/venues` to the nav links list.
 
@@ -490,43 +391,26 @@ export type Venue = VenueRow & {
 };
 ```
 
-#### 3. Update the API Select Strings
+#### 3. Update the Select String
 
-In `src/lib/api/dances.ts`, update every `.select()` call to include the new join:
+In `src/hooks/useDances.ts`, update every select string constant to include the new join:
 
 ```typescript
 .select('*, programs_dances(...), dances_choreographers(...), dances_venues(id, venue:venues(*))')
 ```
 
-Do the same in `src/lib/api/venues.ts` if you want dances eager-loaded from the venue side.
+Do the same in `src/hooks/useVenues.ts` if you want dances eager-loaded from the venue side.
 
-#### 4. API Layer for the Join Table — `src/lib/api/dancesVenues.ts`
+#### 4. Mutation Hooks — `src/hooks/useDancesVenues.ts`
 
-```typescript
-export const addVenueToDance = async (danceId: number, venueId: number) => {
-  const { data, error } = await supabase
-    .from('dances_venues')
-    .insert({ dance_id: danceId, venue_id: venueId })
-    .select()
-    .single();
-  if (error) throw new Error(error.message);
-  return data;
-};
-
-export const removeVenueFromDance = async (danceId: number, venueId: number) => {
-  const { error } = await supabase
-    .from('dances_venues')
-    .delete()
-    .eq('dance_id', danceId)
-    .eq('venue_id', venueId);
-  if (error) throw new Error(error.message);
-};
-```
-
-#### 5. Mutation Hooks — `src/hooks/useDancesVenues.ts`
+Supabase add/remove functions are module-level privates in the same file:
 
 ```typescript
+const addVenueToDance = async (danceId: number, venueId: number) => { ... };
+const removeVenueFromDance = async (danceId: number, venueId: number) => { ... };
+
 export const useAddVenueToDance = () => {
+  const { toastError } = useNotify();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ danceId, venueId }: { danceId: number; venueId: number }) =>
@@ -536,11 +420,13 @@ export const useAddVenueToDance = () => {
       queryClient.invalidateQueries({ queryKey: ['dances'] });
       queryClient.invalidateQueries({ queryKey: ['venues'] });
     },
+    onError: (err: Error) => toastError(err.message),
   });
 };
+// useRemoveVenueFromDance follows the same pattern
 ```
 
-#### 6. Update the Hook's `select` Transform (if needed)
+#### 5. Update the Hook's `select` Transform (if needed)
 
 In `src/hooks/useDances.ts`, if need a flattened string for query builder filtering, add it to the `buildRelationsColumns` helper:
 
@@ -552,7 +438,9 @@ const buildRelationsColumns = (dance: Dance) => ({
 });
 ```
 
-#### 7. Add a Relation Column in the Config — `src/components/Dances/config.tsx`
+#### 6. Add a Relation Column in the Config — `src/components/Dances/config.tsx`
+
+Add the column with `meta: { inputType: 'relation' }`. This tells `RecordEdit` to slot in the matching editor from the `relationEditors` prop, and tells `RecordView` to render it via the `Cell` function (which uses `RelationCell` for clickable drawer navigation).
 
 ```typescript
 {
@@ -568,12 +456,13 @@ const buildRelationsColumns = (dance: Dance) => ({
       getLabel={(joinRow) => joinRow.venue.name}
     />
   ),
+  meta: { inputType: 'relation' },
 },
 ```
 
-#### 8. Add Relation Editing to the Detail Component — `src/components/Dances/Dance.tsx`
+#### 7. Add Relation Editing to the Detail Component — `src/components/Dances/Dance.tsx`
 
-Use `usePendingRelations` to stage add/remove before save. Pass `RelationEditor` as a child of `RecordEdit` and `RelationList` as a child of `RecordView`:
+Use `usePendingRelations` to stage add/remove before save. Pass `RelationEditor` via the `relationEditors` prop on `RecordEdit`, keyed by the column's `id`. No changes needed for view mode — `RecordView` automatically uses the column's `Cell` renderer.
 
 ```typescript
 const pendingVenues = usePendingRelations();
@@ -591,31 +480,25 @@ const handleSave = async (updates: DanceUpdate) => {
   );
 };
 
-// edit/create mode:
-<RecordEdit ... hasPendingRelationChanges={pendingVenues.hasPendingChanges}>
-  <RelationEditor
-    label='Venues'
-    allItems={venues ?? []}
-    existingIds={(dance?.dances_venues ?? []).map(dv => dv.venue.id)}
-    pending={pendingVenues}
-    getId={(venue) => venue.id}
-    getLabel={(venue) => venue.name}
-  />
-</RecordEdit>
-
-// view mode:
-<RecordView ...>
-  <RelationList
-    label='🔗 Venues'
-    model='venue'
-    relations={dance.dances_venues}
-    getRelationId={(dv) => dv.venue.id}
-    getRelationLabel={(dv) => dv.venue.name}
-  />
-</RecordView>
+<RecordEdit
+  ...
+  hasPendingRelationChanges={pendingVenues.hasPendingChanges}
+  relationEditors={{
+    venues: <RelationEditor
+      model='venue' label='Venues'
+      relations={dance?.dances_venues ?? []}
+      getRelationId={(dv) => dv.venue.id}
+      getRelationLabel={(dv) => dv.venue.name}
+      options={venues ?? []}
+      getOptionId={(venue) => venue.id}
+      getOptionLabel={(venue) => venue.name}
+      pending={pendingVenues}
+    />,
+  }}
+/>
 ```
 
-#### 9. Add to Query Builder Fields (if applicable)
+#### 8. Add to Query Builder Fields (if applicable)
 
 In `config.tsx`, add a field using the computed name string from step 6:
 
@@ -690,15 +573,16 @@ export type Dance = DanceRow & {
 };
 ```
 
-#### 3. API Layer — `src/lib/api/formations.ts`
+#### 3. Query Hook — `src/hooks/useFormations.ts`
 
-Get-only, ordered by `sort_order`:
+Read-only, no mutations. Supabase function inlined as a module-level private:
 
 ```typescript
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import type { FormationRow } from '@/lib/types/database';
 
-export const getFormations = async () => {
+const getFormations = async () => {
   const { data, error } = await supabase
     .from('formations')
     .select('*')
@@ -706,29 +590,20 @@ export const getFormations = async () => {
   if (error) throw new Error(error.message);
   return data as FormationRow[];
 };
-```
-
-#### 4. Query Hook — `src/hooks/useFormations.ts`
-
-Read-only query hook, no mutations:
-
-```typescript
-import { useQuery } from '@tanstack/react-query';
-import { getFormations } from '@/lib/api/formations';
 
 export const useFormations = () =>
   useQuery({ queryKey: ['formations'], queryFn: getFormations });
 ```
 
-#### 5. Update the Dances Select — `src/lib/api/dances.ts`
+#### 4. Update the Dances Select — `src/hooks/useDances.ts`
 
-Add the FK join to `DANCE_SELECT`:
+Add the FK join to the select string constant:
 
 ```typescript
 const DANCE_SELECT = '*, ..., formation:formations(id, name, sort_order)';
 ```
 
-#### 6. Update `config.tsx`
+#### 5. Update `config.tsx`
 
 Add `formation_id: null` to `newRecord`. Add a column with `accessorKey` (so RecordEdit includes it in form submission), a `Cell` renderer showing the name, and `meta: { inputType: 'select' }`:
 
@@ -745,7 +620,7 @@ export const newRecord: DanceInsert = {
   Cell: ({ row }) => (row.original as Dance).formation?.name ?? '',
   enableColumnFilter: false,
   size: 150,
-  meta: { inputType: 'select' as const },
+  meta: { inputType: 'select' },
 },
 ```
 
@@ -755,7 +630,7 @@ Add to `queryFields` — the query evaluator automatically resolves FK objects w
 { name: 'formation', label: 'Formation', inputType: 'string' },
 ```
 
-#### 7. Wire Up in `Dance.tsx`
+#### 6. Wire Up in `Dance.tsx`
 
 Import the hook, build the `selectOptions` map, and pass it to both `RecordEdit` instances:
 
@@ -781,27 +656,18 @@ The `config.tsx` file controls how fields appear in the table, detail view, and 
 
 #### Editable Field (persisted to DB)
 
-Use `accessorKey` matching the DB column name. `RecordEdit` auto-renders an input for it.
+Use `accessorKey` matching the DB column name. Always set `meta.inputType` explicitly — `RecordEdit` uses it to choose the input widget.
 
 ```typescript
 {
   accessorKey: 'duration',
   header: 'Duration (min)',
   size: 150,
+  meta: { inputType: 'number' },  // 'boolean' | 'number' | 'date' | 'text' | 'select' | 'relation'
 }
 ```
 
-Field type is inferred from the value in `newRecord`. Override explicitly with `meta.inputType`:
-
-```typescript
-{
-  accessorKey: 'is_active',
-  header: 'Active?',
-  meta: { inputType: 'boolean' },  // 'boolean' | 'number' | 'date' | 'text' | 'select'
-}
-```
-
-For `'select'`, pass an `options` map to `RecordEdit` via the `selectOptions` prop (keyed by `accessorKey`). The Autocomplete is populated from there. See [Adding a New Shared Lookup Table](#adding-a-new-shared-lookup-table-fk-on-dance).
+For `'select'`, pass an options map to `RecordEdit` via the `selectOptions` prop (keyed by `accessorKey`). The Autocomplete is populated from there. See [Adding a New Shared Lookup Table](#adding-a-new-shared-lookup-table-fk-on-dance).
 
 Also add the field to `newRecord`:
 
@@ -812,15 +678,16 @@ export const newRecord: DanceInsert = {
 };
 ```
 
-#### Display-Only Column (not in edit form, not saved)
+#### Relation Column (many-to-many, edit via `RelationEditor`)
 
-Omit `accessorKey` and use `id` instead. `RecordEdit` skips any column without `accessorKey`.
+Use `id` (no `accessorKey`) and set `meta: { inputType: 'relation' }`. In the table and drawer view, the `Cell` renderer handles display. In the edit form, `RecordEdit` looks up the matching editor from the `relationEditors` prop by column id. If no editor is provided for that id, the column is silently skipped.
 
 ```typescript
 {
   id: 'choreographers',
   header: '🔗 Choreographers',
   Cell: ({ row }) => <RelationCell ... />,
+  meta: { inputType: 'relation' },
 }
 ```
 
@@ -840,17 +707,16 @@ Any column can override how its value displays in the table with a `Cell` functi
 
 #### Excluding a Field from the Edit Form
 
-`RecordEdit` automatically skips:
-1. **`id`** — hardcoded skip
-2. **`created_at`** — hardcoded skip
-3. **Columns without `accessorKey`** — display-only columns are always skipped
-4. **`meta.readonly: true`** — explicit opt-out for any other column:
+`RecordEdit` skips a column when:
+1. **`meta: { inputType: 'relation' }`** — rendered as a relation editor (from `relationEditors` prop), not a form field
+2. **No `accessorKey`** — columns using `id` only are not included in form submission
+3. **`meta: { readonly: true }`** — visible in table/view but excluded from the edit form:
 
 ```typescript
 {
-  accessorKey: 'computed_field',
-  header: 'Computed',
-  meta: { readonly: true },  // visible in table/view but excluded from edit form
+  accessorKey: 'created_at',
+  header: 'Date Added',
+  meta: { inputType: 'date', readonly: true },
 }
 ```
 
@@ -956,11 +822,6 @@ Then add to `queryFields` in `config.tsx` using the alias name:
 | Auto-generated types (don't edit) | `src/lib/types/database_generated.ts` |
 | Supabase client | `src/lib/supabase.ts` |
 | TanStack Query client | `src/lib/react-query.ts` |
-| API: Dances | `src/lib/api/dances.ts` |
-| API: Programs | `src/lib/api/programs.ts` |
-| API: Choreographers | `src/lib/api/choreographers.ts` |
-| API: Join tables | `src/lib/api/programsDances.ts`, `src/lib/api/dancesChoreographers.ts` |
-| API: Shared lookup tables | `src/lib/api/danceTypes.ts`, `src/lib/api/formations.ts`, `src/lib/api/progressions.ts` |
 | Hook: Pending relation staging | `src/hooks/usePendingRelations.ts` |
 | Hook: Table state + client filtering | `src/hooks/useTable.ts` |
 | Hook: localStorage persistence | `src/hooks/usePersistence.ts` |
@@ -971,8 +832,7 @@ Then add to `queryFields` in `config.tsx` using the alias name:
 | Generic edit form | `src/components/RecordEdit.tsx` |
 | Generic view display | `src/components/RecordView.tsx` |
 | Relation edit UI | `src/components/RelationEditor.tsx` |
-| Relation display (table cell) | `src/components/RelationCell.tsx` |
-| Relation display (detail view) | `src/components/RelationList.tsx` |
+| Relation display (table cell + drawer view) | `src/components/RelationCell.tsx` |
 | Query builder evaluator | `src/components/QueryBuilder/queryEvaluator.ts` |
 | Dance config | `src/components/Dances/config.tsx` |
 | Program config | `src/components/Programs/config.tsx` |
@@ -987,14 +847,13 @@ Then add to `queryFields` in `config.tsx` using the alias name:
 - [ ] Types regenerated
 - [ ] `*Row` type added to `src/lib/types/database.ts`
 - [ ] `Dance` type extended with nullable joined object (e.g. `formation: FormationRow | null`)
-- [ ] Get-only API function created in `src/lib/api/{model}s.ts` (ordered by `sort_order`)
-- [ ] Read-only query hook created in `src/hooks/use{Model}s.ts` (no mutations)
-- [ ] `DANCE_SELECT` in `src/lib/api/dances.ts` updated to include the FK join
+- [ ] Read-only query hook created in `src/hooks/use{Model}s.ts` with inlined Supabase function (no mutations)
+- [ ] Select string constant in `src/hooks/useDances.ts` updated to include the FK join
 - [ ] `{model}_id: null` added to `newRecord` in `config.tsx`
 - [ ] Column added to `config.tsx` with `accessorKey`, `Cell` renderer showing `.name`, and `meta: { inputType: 'select' }`
 - [ ] Field added to `queryFields` in `config.tsx` using the relation alias name (not the `_id` column name)
 - [ ] Hook imported in `Dance.tsx` and entry added to the `selectOptions` map
-- [ ] `selectOptions` passed to both `RecordEdit` instances in `Dance.tsx`
+- [ ] `selectOptions` passed to `RecordEdit` in `Dance.tsx`
 
 ## Checklist: New Auxiliary Table (Settings List)
 
@@ -1002,8 +861,7 @@ Then add to `queryFields` in `config.tsx` using the alias name:
 - [ ] `supabase gen types typescript --local > src/lib/types/database_generated.ts`
 - [ ] `Model` union updated in `src/lib/types/database.ts`
 - [ ] Custom types (`*Row`, `*`, `*Insert`, `*Update`) added to `database.ts` (junction array with `{ id: number }[]` if delete-guarding)
-- [ ] API functions created in `src/lib/api/{model}s.ts` (list, create, update, delete — no single-record fetch)
-- [ ] TanStack Query hooks created in `src/hooks/use{Model}s.ts` (list hook + mutation hooks — no single-record hook)
+- [ ] TanStack Query hooks created in `src/hooks/use{Model}s.ts` with inlined Supabase functions (list + mutation hooks, no single-record hook)
 - [ ] Settings list component created in `src/components/Settings/{Model}sList.tsx` (see `ChoreographersList.tsx` as reference)
 - [ ] Exported from `src/components/Settings/index.ts`
 - [ ] Entry added to `SETTINGS_ITEMS` in `src/components/Settings/SettingsPage.tsx`
@@ -1011,13 +869,11 @@ Then add to `queryFields` in `config.tsx` using the alias name:
 
 **If surfacing in dances (table column + drawer):**
 - [ ] Junction array added to `Dance` type in `src/lib/types/database.ts`
-- [ ] `.select()` in `src/lib/api/dances.ts` updated to eager-load relation
-- [ ] Junction table API functions created (`add{Model}ToDance`, `remove{Model}FromDance`) in `src/lib/api/dances{Model}s.ts`
-- [ ] Mutation hooks created in `src/hooks/useDances{Model}s.ts`
+- [ ] Select string in `src/hooks/useDances.ts` updated to eager-load relation
+- [ ] Mutation hooks created in `src/hooks/useDances{Model}s.ts` with inlined Supabase add/remove functions
 - [ ] `buildRelationsColumns` in `src/hooks/useDances.ts` updated with computed name string (if filtering needed)
-- [ ] `RelationCell` column added to `src/components/Dances/config.tsx`
-- [ ] `RelationEditor` added to `Dance.tsx` edit/create modes
-- [ ] `RelationList` added to `Dance.tsx` view mode
+- [ ] Column added to `src/components/Dances/config.tsx` with `Cell: <RelationCell .../>` and `meta: { inputType: 'relation' }`
+- [ ] `RelationEditor` added to `relationEditors` prop in `Dance.tsx` (keyed by column id; view mode is automatic)
 - [ ] Computed field added to `queryFields` in `config.tsx` (if filtering needed)
 
 ## Checklist: New Primary Model (Full Table + Drawer)
@@ -1026,8 +882,7 @@ Then add to `queryFields` in `config.tsx` using the alias name:
 - [ ] `supabase gen types typescript --local > src/lib/types/database_generated.ts`
 - [ ] `Model` union updated in `src/lib/types/database.ts`
 - [ ] Custom types (`*Row`, `*`, `*Insert`, `*Update`) added to `database.ts`
-- [ ] API functions created in `src/lib/api/{model}s.ts`
-- [ ] TanStack Query hooks created in `src/hooks/use{Model}s.ts`
+- [ ] TanStack Query hooks created in `src/hooks/use{Model}s.ts` with inlined Supabase functions
 - [ ] `config.tsx` created with `newRecord`, `columns`, `tableInitialState`, `queryFields`, `defaultQuery`
 - [ ] Detail component (`{Model}.tsx`) created
 - [ ] Table component (`{Model}s.tsx`) created
@@ -1042,11 +897,9 @@ Then add to `queryFields` in `config.tsx` using the alias name:
 - [ ] Types regenerated
 - [ ] Join arrays added to both sides in `src/lib/types/database.ts`
 - [ ] `.select()` strings updated in both entity API files
-- [ ] Join table API functions created (`addX`, `removeX`)
-- [ ] Mutation hooks created for add/remove
+- [ ] Mutation hooks created for add/remove in `src/hooks/use{Model}s{Entity}s.ts` with inlined Supabase functions
 - [ ] Hook `select` transform updated with computed name string (if filtering by name is needed)
-- [ ] `RelationCell` column added to table config on both sides (if applicable)
-- [ ] `RelationEditor` added to detail component edit/create modes
-- [ ] `RelationList` added to detail component view mode
+- [ ] Column added to `config.tsx` with `Cell: <RelationCell .../>` and `meta: { inputType: 'relation' }` (view display is automatic via `RecordView`)
+- [ ] `RelationEditor` added to `relationEditors` prop in detail component (keyed by column id)
 - [ ] `queryFields` updated with computed name field (if applicable)
 - [ ] Query invalidations in mutation hooks cover all affected query keys

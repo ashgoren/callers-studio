@@ -10,17 +10,9 @@ export const newRecord = {
   location: '',
 }
 
-
-// TABLE CONFIG
+// TABLE & DRAWER CONFIG
 
 export const columns: MRT_ColumnDef<Program>[] = [
-  // {
-  //   accessorKey: 'id',
-  //   header: 'ID',
-  //   enableColumnFilter: false,
-  //   size: 120,
-  //   minSize: 55,
-  // },
   {
     accessorKey: 'date',
     header: 'Date',
@@ -36,6 +28,7 @@ export const columns: MRT_ColumnDef<Program>[] = [
     header: 'Location',
     size: 60,
     minSize: 60,
+    meta: { inputType: 'text' }
   },
   {
     id: 'dances',
@@ -47,7 +40,8 @@ export const columns: MRT_ColumnDef<Program>[] = [
       model='dance'
       getId={(joinRow) => joinRow.dance.id}
       getLabel={(joinRow) => `${joinRow.order} - ${joinRow.dance.title}`}
-    />
+    />,
+    meta: { inputType: 'relation' },
   }
 ];
 
@@ -70,3 +64,5 @@ export const defaultQuery = {
   combinator: 'and',
   rules: [{ field: 'date', operator: '=', value: '' }]
 };
+
+

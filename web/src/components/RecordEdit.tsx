@@ -1,19 +1,15 @@
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo, type ReactNode } from 'react';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { Box, TextField, Button, Checkbox, FormControlLabel, Autocomplete } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import { useConfirm } from 'material-ui-confirm';
-import { useReactTable, getCoreRowModel } from '@tanstack/react-table';
 import { DrawerLayout } from './DrawerLayout';
 import { useDrawerActions, useDrawerState } from '@/contexts/DrawerContext';
-import type { ColumnDef } from '@tanstack/react-table';
 import type { MRT_RowData, MRT_ColumnDef } from 'material-react-table';
 
-type InputFieldType = 'boolean' | 'number' | 'date' | 'text' | 'select';
+type InputFieldType = 'boolean' | 'number' | 'date' | 'text' | 'select' | 'relation';
 
-export type SelectOption = { value: number; label: string };
-
-type ColumnDefWithMeta<TData> = ColumnDef<TData> & {
+type ColumnDefWithMeta<TData extends MRT_RowData> = MRT_ColumnDef<TData> & {
   meta?: {
     inputType?: InputFieldType;
     readonly?: boolean;
@@ -26,18 +22,12 @@ type RecordEditProps<TData extends MRT_RowData> = {
   title?: string;
   onSave: (updates: any) => Promise<unknown>; // used for both create and update
   hasPendingRelationChanges: boolean;
-  selectOptions?: Record<string, SelectOption[]>;
-  children?: React.ReactNode;
+  selectOptions?: Record<string, { value: number; label: string }[]>;
+  relationEditors?: Record<string, ReactNode>;
 };
 
 export const RecordEdit = <TData extends MRT_RowData>({
-  data,
-  columns,
-  title,
-  onSave,
-  hasPendingRelationChanges,
-  selectOptions = {},
-  children
+  data, columns, title, onSave, hasPendingRelationChanges, selectOptions = {}, relationEditors = {},
 }: RecordEditProps<TData>) => {
   const confirm = useConfirm();
   const { mode } = useDrawerState();
@@ -54,15 +44,6 @@ export const RecordEdit = <TData extends MRT_RowData>({
 
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<Partial<TData>>({ ...data });
-
-  const tableData = useMemo(() => [data], [data]);
-
-  const table = useReactTable<Partial<TData>>({
-    data: tableData,
-    columns: columns as ColumnDef<Partial<TData>>[],
-    getCoreRowModel: getCoreRowModel(),
-  });
-  const row = table.getRowModel().rows[0];
 
   const isDirty = useMemo(() => {
     return Object.keys(formData).some((key) => formData[key] !== data[key]);
@@ -87,15 +68,11 @@ export const RecordEdit = <TData extends MRT_RowData>({
 
   const handleSubmit = async () => {
     setSaving(true);
-    console.log('Submitting form data:', formData);
     try {
-      const cleanedData = row.getAllCells().reduce((acc, cell) => {
-        const column = cell.column;
-        const key = column.id;
-        if (key === 'id') return acc;
-        if (!('accessorKey' in column.columnDef)) return acc;
-        const accessorKey = column.columnDef.accessorKey as keyof TData;
-        if (formData[accessorKey] !== undefined) acc[accessorKey] = formData[accessorKey];
+      const cleanedData = columns.reduce((acc, col) => {
+        if (!('accessorKey' in col)) return acc;
+        const key = col.accessorKey as keyof TData;
+        if (formData[key] !== undefined) acc[key] = formData[key];
         return acc;
       }, {} as Partial<TData>);
 
@@ -135,27 +112,26 @@ export const RecordEdit = <TData extends MRT_RowData>({
       }
     >
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-        {row.getAllCells().map((cell) => {
-          const column = cell.column;
-          const key = column.id;
+        {columns.map((col, i) => {
+          const colDef = col as ColumnDefWithMeta<TData>;
+          const colId = colDef.id ?? ('accessorKey' in col ? String(col.accessorKey) : String(i));
 
-          // Skip non-editable columns
-          if (key === 'id' || key === 'created_at') return null; // skip id and created_at columns
-          if (!('accessorKey' in column.columnDef)) return null; // skip display columns
-          if ((column.columnDef as ColumnDefWithMeta<TData>).meta?.readonly) return null;
+          if (colDef.meta?.inputType === 'relation') {
+            const editor = relationEditors[colId];
+            return editor ? <React.Fragment key={colId}>{editor}</React.Fragment> : null;
+          }
 
-          const label = typeof column.columnDef.header === 'string'
-            ? column.columnDef.header
-            : key;
+          if (colDef.meta?.readonly || !('accessorKey' in col)) return null;
 
+          const key = col.accessorKey as string;
+          const label = typeof col.header === 'string' ? col.header : key;
           const value = formData[key];
-          const fieldType = (column.columnDef as ColumnDefWithMeta<TData>).meta?.inputType || inferFieldType(data[key]);
-
+          const fieldType = colDef.meta?.inputType;
           const options = selectOptions[key] ?? [];
           const selectedOption = options.find(o => o.value === value) ?? null;
 
           return (
-            <Box key={cell.id}>
+            <Box key={key}>
               {fieldType === 'boolean' ? (
                 <FormControlLabel
                   control={
@@ -169,7 +145,7 @@ export const RecordEdit = <TData extends MRT_RowData>({
               ) : fieldType === 'date' ? (
                 <DatePicker
                   label={label}
-                  value={value ? new Date(value) : null}
+                  value={value ? new Date(value as string) : null}
                   onChange={(newValue) => handleChange(key, newValue)}
                   slotProps={{ textField: { size: 'small', fullWidth: true } }}
                 />
@@ -194,8 +170,8 @@ export const RecordEdit = <TData extends MRT_RowData>({
                   }
                   fullWidth
                   size='small'
-                  multiline={fieldType === 'text' && String(data[key] ?? '').length > 100}
-                  rows={fieldType === 'text' && String(data[key] ?? '').length > 100 ? 3 : 1}
+                  multiline={fieldType === 'text' && String(data[key as keyof TData] ?? '').length > 100}
+                  rows={fieldType === 'text' && String(data[key as keyof TData] ?? '').length > 100 ? 3 : 1}
                 />
               )}
             </Box>
@@ -203,16 +179,6 @@ export const RecordEdit = <TData extends MRT_RowData>({
         })}
       </Box>
 
-
-      {children} {/* render associations edit component here */}
-
     </DrawerLayout>
   );
-};
-
-const inferFieldType = (value: unknown): InputFieldType => {
-  if (typeof value === 'boolean') return 'boolean';
-  if (typeof value === 'number') return 'number';
-  if (value instanceof Date || (typeof value === 'string' && !isNaN(Date.parse(value)))) return 'date';
-  return 'text';
 };
