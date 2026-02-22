@@ -9,6 +9,9 @@ import '@tanstack/react-table';
 
 export const newRecord: DanceInsert = {
   title: '',
+  dance_type_id: null,
+  formation_id: null,
+  progression_id: null,
   difficulty: null,
   notes: '',
   place_in_program: '',
@@ -54,6 +57,33 @@ export const columns: MRT_ColumnDef<Dance>[] = [
     size: 200,
     minSize: 170,
     Cell: ({ row }) => row.original.dances_choreographers.map(dc => dc.choreographer.name).join(', ')
+  },
+  {
+    accessorKey: 'dance_type_id',
+    header: 'Dance Type',
+    Cell: ({ row }) => (row.original as Dance).dance_type?.name ?? '',
+    enableColumnFilter: false,
+    size: 175,
+    minSize: 100,
+    meta: { inputType: 'select' as const },
+  },
+  {
+    accessorKey: 'formation_id',
+    header: 'Formation',
+    Cell: ({ row }) => (row.original as Dance).formation?.name ?? '',
+    enableColumnFilter: false,
+    size: 175,
+    minSize: 100,
+    meta: { inputType: 'select' as const },
+  },
+  {
+    accessorKey: 'progression_id',
+    header: 'Progression',
+    Cell: ({ row }) => (row.original as Dance).progression?.name ?? '',
+    enableColumnFilter: false,
+    size: 175,
+    minSize: 100,
+    meta: { inputType: 'select' as const },
   },
   {
     id: 'keyMoves',
@@ -173,6 +203,9 @@ export const tableInitialState = {
 export const queryFields = [
   { name: 'title', label: 'Title', inputType: 'string' },
   { name: 'choreographerNames', label: 'Choreographers', inputType: 'string' },
+  { name: 'dance_type', label: 'Dance Type', inputType: 'string' },
+  { name: 'formation', label: 'Formation', inputType: 'string' },
+  { name: 'progression', label: 'Progression', inputType: 'string' },
   { name: 'keyMoveNames', label: 'Key Moves', inputType: 'string' },
   { name: 'vibeNames', label: 'Vibes', inputType: 'string' },
   { name: 'difficulty', label: 'Difficulty', inputType: 'number' },

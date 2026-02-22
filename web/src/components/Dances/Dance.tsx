@@ -6,6 +6,9 @@ import { useAddVibeToDance, useRemoveVibeFromDance } from '@/hooks/useDancesVibe
 import { useChoreographers } from '@/hooks/useChoreographers';
 import { useKeyMoves } from '@/hooks/useKeyMoves';
 import { useVibes } from '@/hooks/useVibes';
+import { useDanceTypes } from '@/hooks/useDanceTypes';
+import { useFormations } from '@/hooks/useFormations';
+import { useProgressions } from '@/hooks/useProgressions';
 import { usePendingRelations } from '@/hooks/usePendingRelations';
 import { RelationEditor } from '@/components/RelationEditor';
 import { Spinner, ErrorMessage } from '@/components/shared';
@@ -36,6 +39,16 @@ export const Dance = ({ id }: { id?: number }) => {
   const { data: choreographers } = useChoreographers();
   const { data: keyMoves } = useKeyMoves();
   const { data: vibes } = useVibes();
+  const { data: danceTypes } = useDanceTypes();
+  const { data: formations } = useFormations();
+  const { data: progressions } = useProgressions();
+
+  const selectOptions = {
+    dance_type_id: (danceTypes ?? []).map(dt => ({ value: dt.id, label: dt.name })),
+    formation_id: (formations ?? []).map(f => ({ value: f.id, label: f.name })),
+    progression_id: (progressions ?? []).map(p => ({ value: p.id, label: p.name })),
+  };
+
   const pendingChoreographers = usePendingRelations();
   const pendingKeyMoves = usePendingRelations();
   const pendingVibes = usePendingRelations();
@@ -133,6 +146,7 @@ export const Dance = ({ id }: { id?: number }) => {
         title={'New Dance'}
         onSave={handleSave}
         hasPendingRelationChanges={pendingChoreographers.hasPendingChanges || pendingKeyMoves.hasPendingChanges || pendingVibes.hasPendingChanges}
+        selectOptions={selectOptions}
       >
         <RelationEditor
           model='choreographer'
@@ -183,6 +197,7 @@ export const Dance = ({ id }: { id?: number }) => {
         title={`Edit: ${dance.title}`}
         onSave={handleSave}
         hasPendingRelationChanges={pendingChoreographers.hasPendingChanges || pendingKeyMoves.hasPendingChanges || pendingVibes.hasPendingChanges}
+        selectOptions={selectOptions}
       >
         <RelationEditor
           model='choreographer'

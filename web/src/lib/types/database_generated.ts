@@ -55,14 +55,35 @@ export type Database = {
         }
         Relationships: []
       }
+      dance_types: {
+        Row: {
+          id: number
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          id?: number
+          name: string
+          sort_order: number
+        }
+        Update: {
+          id?: number
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       dances: {
         Row: {
           created_at: string
+          dance_type_id: number | null
           difficulty: number | null
+          formation_id: number | null
           id: number
           moves: string | null
           notes: string | null
           place_in_program: string | null
+          progression_id: number | null
           swing_16: boolean | null
           title: string
           url: string | null
@@ -71,11 +92,14 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          dance_type_id?: number | null
           difficulty?: number | null
+          formation_id?: number | null
           id?: number
           moves?: string | null
           notes?: string | null
           place_in_program?: string | null
+          progression_id?: number | null
           swing_16?: boolean | null
           title: string
           url?: string | null
@@ -84,18 +108,43 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          dance_type_id?: number | null
           difficulty?: number | null
+          formation_id?: number | null
           id?: number
           moves?: string | null
           notes?: string | null
           place_in_program?: string | null
+          progression_id?: number | null
           swing_16?: boolean | null
           title?: string
           url?: string | null
           user_id?: string
           video?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "dances_dance_type_id_fkey"
+            columns: ["dance_type_id"]
+            isOneToOne: false
+            referencedRelation: "dance_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dances_formation_id_fkey"
+            columns: ["formation_id"]
+            isOneToOne: false
+            referencedRelation: "formations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dances_progression_id_fkey"
+            columns: ["progression_id"]
+            isOneToOne: false
+            referencedRelation: "progressions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       dances_choreographers: {
         Row: {
@@ -205,6 +254,24 @@ export type Database = {
           },
         ]
       }
+      formations: {
+        Row: {
+          id: number
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          id?: number
+          name: string
+          sort_order: number
+        }
+        Update: {
+          id?: number
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       key_moves: {
         Row: {
           created_at: string
@@ -288,6 +355,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      progressions: {
+        Row: {
+          id: number
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          id?: number
+          name: string
+          sort_order: number
+        }
+        Update: {
+          id?: number
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
       }
       vibes: {
         Row: {

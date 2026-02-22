@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { Box, TextField, Button, Checkbox, FormControlLabel } from '@mui/material';
+import { Box, TextField, Button, Checkbox, FormControlLabel, Autocomplete } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import { useConfirm } from 'material-ui-confirm';
 import { useReactTable, getCoreRowModel } from '@tanstack/react-table';
@@ -9,7 +9,9 @@ import { useDrawerActions, useDrawerState } from '@/contexts/DrawerContext';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { MRT_RowData, MRT_ColumnDef } from 'material-react-table';
 
-type InputFieldType = 'boolean' | 'number' | 'date' | 'text';
+type InputFieldType = 'boolean' | 'number' | 'date' | 'text' | 'select';
+
+export type SelectOption = { value: number; label: string };
 
 type ColumnDefWithMeta<TData> = ColumnDef<TData> & {
   meta?: {
@@ -24,6 +26,7 @@ type RecordEditProps<TData extends MRT_RowData> = {
   title?: string;
   onSave: (updates: any) => Promise<unknown>; // used for both create and update
   hasPendingRelationChanges: boolean;
+  selectOptions?: Record<string, SelectOption[]>;
   children?: React.ReactNode;
 };
 
@@ -33,6 +36,7 @@ export const RecordEdit = <TData extends MRT_RowData>({
   title,
   onSave,
   hasPendingRelationChanges,
+  selectOptions = {},
   children
 }: RecordEditProps<TData>) => {
   const confirm = useConfirm();
@@ -147,6 +151,9 @@ export const RecordEdit = <TData extends MRT_RowData>({
           const value = formData[key];
           const fieldType = (column.columnDef as ColumnDefWithMeta<TData>).meta?.inputType || inferFieldType(data[key]);
 
+          const options = selectOptions[key] ?? [];
+          const selectedOption = options.find(o => o.value === value) ?? null;
+
           return (
             <Box key={cell.id}>
               {fieldType === 'boolean' ? (
@@ -165,6 +172,17 @@ export const RecordEdit = <TData extends MRT_RowData>({
                   value={value ? new Date(value) : null}
                   onChange={(newValue) => handleChange(key, newValue)}
                   slotProps={{ textField: { size: 'small', fullWidth: true } }}
+                />
+              ) : fieldType === 'select' ? (
+                <Autocomplete
+                  options={options}
+                  getOptionLabel={(o) => o.label}
+                  value={selectedOption}
+                  onChange={(_, newValue) => handleChange(key, newValue?.value ?? null)}
+                  isOptionEqualToValue={(o, v) => o.value === v.value}
+                  renderInput={(params) => <TextField {...params} label={label} size='small' />}
+                  clearOnEscape
+                  fullWidth
                 />
               ) : (
                 <TextField
