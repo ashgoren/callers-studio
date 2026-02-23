@@ -131,7 +131,7 @@ const buildRelationsColumns = (dance: Dance) => {
   return {
     ...dance,
     programs_dances: sortedPrograms,
-    programNames: sortedPrograms.map(pd => pd.program.location).join(', '),
+    programNames: sortedPrograms.map(pd => `${pd.program.date} ${pd.program.location}`).join(' '),
     dances_choreographers: sortedChoreographers,
     choreographerNames: sortedChoreographers.map(dc => dc.choreographer.name).join(', '),
     dances_key_moves: sortedKeyMoves,

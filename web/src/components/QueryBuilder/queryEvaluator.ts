@@ -1,18 +1,6 @@
 import { formatQuery, type RuleGroupType, type RuleType } from 'react-querybuilder';
 
 const resolveFieldValue = (row: any, field: string): any => {
-  // Explicit mappings for junction-table relation fields whose names don't match row properties
-  switch (field) {
-    case 'choreographerNames':
-      return row.dances_choreographers?.map((dc: any) => dc.choreographer.name).join(' ') ?? '';
-    case 'keyMoveNames':
-      return row.dances_key_moves?.map((dkm: any) => dkm.key_move.name).join(' ') ?? '';
-    case 'vibeNames':
-      return row.dances_vibes?.map((dv: any) => dv.vibe.name).join(' ') ?? '';
-    case 'programNames':
-      return row.programs_dances?.map((pd: any) => `${pd.program.date} ${pd.program.location}`).join(' ') ?? '';
-  }
-
   const value = row[field];
 
   // Generic: FK lookup objects with a name property (dance_type, formation, progression, etc.)
