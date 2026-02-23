@@ -793,17 +793,14 @@ The query evaluator (`src/components/QueryBuilder/queryEvaluator.ts`) resolves f
 **Automatic — FK lookup objects with a `.name` property:**
 Fields like `formation`, `dance_type`, `progression` resolve automatically. `row['formation']` returns `{ id, name, sort_order }`, and the evaluator extracts `.name`. No evaluator changes needed when adding a new FK lookup field — just add it to `queryFields` using the relation alias name (e.g. `'formation'`, not `'formation_id'`).
 
-**Explicit mapping — junction-table alias fields:**
-Fields like `choreographerNames`, `keyMoveNames` don't match any property on the row (the actual data lives in `dances_choreographers` etc.). These require an explicit case in `resolveFieldValue` in `queryEvaluator.ts`, mapping the alias to the correct nested traversal:
+**Also automatic — junction-table computed name strings:**
+Fields like `choreographerNames`, `keyMoveNames` are flat strings added directly to the row by `buildRelationsColumns` in `src/hooks/useDances.ts`. Because `useDances` applies that transform before the data reaches `useTable`, `row['choreographerNames']` is already a plain string when the evaluator runs — no evaluator changes are needed. The only requirement is that the name used in `buildRelationsColumns` matches the `name` used in `queryFields`:
 
 ```typescript
-case 'choreographerNames':
-  return row.dances_choreographers?.map((dc: any) => dc.choreographer.name).join(' ') ?? '';
-```
+// In useDances.ts buildRelationsColumns:
+choreographerNames: sortedChoreographers.map(dc => dc.choreographer.name).join(', ')
 
-Then add to `queryFields` in `config.tsx` using the alias name:
-
-```typescript
+// In config.tsx queryFields — must use the same string:
 { name: 'choreographerNames', label: 'Choreographers', inputType: 'string' },
 ```
 
@@ -870,8 +867,7 @@ Then add to `queryFields` in `config.tsx` using the alias name:
 - [ ] Junction array added to `Dance` type in `src/lib/types/database.ts`
 - [ ] Select string in `src/hooks/useDances.ts` updated to eager-load relation
 - [ ] Mutation hooks created in `src/hooks/useDances{Model}s.ts` with inlined Supabase add/remove functions
-- [ ] `buildRelationsColumns` in `src/hooks/useDances.ts` updated with computed name string (if filtering needed)
-- [ ] `resolveFieldValue` in `src/components/QueryBuilder/queryEvaluator.ts` updated with explicit case for the computed alias field (if filtering needed)
+- [ ] `buildRelationsColumns` in `src/hooks/useDances.ts` updated with computed name string (if filtering needed) — name must match the `queryFields` entry below
 - [ ] Column added to `src/components/Dances/config.tsx` with `Cell` renderer and `meta: { inputType: 'relation' }`. For auxiliary-table relations, use a plain text join (e.g. `.map(dc => dc.name).join(', ')`), not `RelationCell`.
 - [ ] `RelationEditor` added to `relationEditors` prop in `Dance.tsx` (keyed by column id; view mode is automatic)
 - [ ] Computed field added to `queryFields` in `config.tsx` (if filtering needed)
@@ -898,9 +894,8 @@ Then add to `queryFields` in `config.tsx` using the alias name:
 - [ ] Join arrays added to both sides in `src/lib/types/database.ts`
 - [ ] `.select()` strings updated in both entity API files
 - [ ] Mutation hooks created for add/remove in `src/hooks/use{Model}s{Entity}s.ts` with inlined Supabase functions
-- [ ] Hook `select` transform updated with computed name string (if filtering by name is needed)
-- [ ] `resolveFieldValue` in `src/components/QueryBuilder/queryEvaluator.ts` updated with explicit case for the computed alias field (if filtering needed)
-- [ ] Column added to `config.tsx` with `Cell: <RelationCell .../>` and `meta: { inputType: 'relation' }` (view display is automatic via `RecordView`). Use `RelationCell` only for primary-model relations (entities in `DETAIL_COMPONENTS`); use a plain text join for auxiliary-table relations.
+- [ ] Hook `select` transform updated with computed name string (if filtering by name is needed) — name must match the `queryFields` entry below
+- [ ] Column added to `config.tsx` with `Cell` renderer and `meta: { inputType: 'relation' }` (view display is automatic via `RecordView`). Use `RelationCell` for primary-model relations (entities in `DETAIL_COMPONENTS`); use a plain text join for auxiliary-table relations.
 - [ ] `RelationEditor` added to `relationEditors` prop in detail component (keyed by column id)
 - [ ] `queryFields` updated with computed name field (if applicable)
 - [ ] Query invalidations in mutation hooks cover all affected query keys
