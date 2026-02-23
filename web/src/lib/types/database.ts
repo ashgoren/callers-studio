@@ -6,6 +6,7 @@ import type { Database } from './database_generated';
 type Tables = Database['public']['Tables'];
 
 export type Model = 'dance' | 'program' | 'choreographer' | 'key_move' | 'vibe';
+export type DrawerModel = 'dance' | 'program'; // Models that can be shown in the drawer
 
 export type DanceTypeRow = Tables['dance_types']['Row'];
 export type FormationRow = Tables['formations']['Row'];

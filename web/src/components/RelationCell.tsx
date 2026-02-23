@@ -1,10 +1,10 @@
 import { Box } from '@mui/material';
 import { useDrawerActions } from '@/contexts/DrawerContext';
-import type { Model } from '@/lib/types/database';
+import type { DrawerModel } from '@/lib/types/database';
 
 export const RelationCell = <TRelation,>({ items, model, getId, getLabel }: {
   items: TRelation[] | null | undefined;
-  model: Model;
+  model: DrawerModel;
   getId: (item: TRelation) => number;
   getLabel: (item: TRelation) => string;
 }) => {

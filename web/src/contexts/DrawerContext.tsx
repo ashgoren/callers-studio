@@ -1,21 +1,21 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useMemo, type ReactNode } from 'react';
-import type { Model } from '@/lib/types/database';
+import type { DrawerModel } from '@/lib/types/database';
 
 type DrawerMode = 'view' | 'edit' | 'create';
 
 type DrawerState = {
   isOpen: boolean;
-  model: Model | null;
+  model: DrawerModel | null;
   id: number | null;
   mode: DrawerMode;
 };
 
 type DrawerActions = {
-  openDrawer: (model: Model, id: number) => void;
+  openDrawer: (model: DrawerModel, id: number) => void;
   closeDrawer: () => void;
   setMode: (mode: DrawerMode) => void;
-  openDrawerForNewRecord: (model: Model) => void;
+  openDrawerForNewRecord: (model: DrawerModel) => void;
 };
 
 const DrawerStateContext = createContext<DrawerState | null>(null);
@@ -27,13 +27,13 @@ export const DrawerProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const actions = useMemo(() => ({
-    openDrawer: (model: Model, id: number) => {
+    openDrawer: (model: DrawerModel, id: number) => {
       setState(prev => {
         if (prev.mode !== 'view') return prev; // Prevent action if in edit/create mode
         return ({ isOpen: true, model, id, mode: 'view' });
       });
     },
-    openDrawerForNewRecord: (model: Model) => {
+    openDrawerForNewRecord: (model: DrawerModel) => {
       setState(prev => {
         if (prev.mode !== 'view') return prev; // Prevent action if in edit/create mode
         return ({ isOpen: true, model, id: null, mode: 'create' });

@@ -10,10 +10,10 @@ import { Spinner, ErrorMessage } from '@/components/shared';
 import { countActiveRules } from '@/components/QueryBuilder/utils';
 import type { MRT_RowData, MRT_ColumnDef, MRT_TableOptions } from 'material-react-table';
 import type { Field, RuleGroupType } from 'react-querybuilder';
-import type { Model } from '@/lib/types/database';
+import type { DrawerModel } from '@/lib/types/database';
 
 export const TablePage = <TData extends MRT_RowData & { id: number }>({ model, useData, columns, queryFields, defaultQuery, tableInitialState }: {
-  model: Model;
+  model: DrawerModel;
   useData: () => { data: TData[] | undefined; error: unknown; isLoading: boolean; };
   columns: MRT_ColumnDef<TData>[];
   queryFields: Field[];

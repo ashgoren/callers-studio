@@ -1,11 +1,11 @@
 import { RelationCell } from '@/components/RelationCell';
 import { formatLocalDate } from '@/lib/utils';
 import type { MRT_ColumnDef } from 'material-react-table';
-import type { Program } from '@/lib/types/database';
+import type { Program, ProgramInsert } from '@/lib/types/database';
 
 // NEW RECORD CONFIG
 
-export const newRecord = {
+export const newRecord: ProgramInsert = {
   date: null,
   location: '',
 }
