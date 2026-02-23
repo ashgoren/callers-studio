@@ -3,11 +3,12 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useDrawerActions } from '@/contexts/DrawerContext';
 import type { ReactNode } from 'react';
 
-export const DrawerLayout = ({ title, children, footer, onClose }: {
+export const DrawerLayout = ({ title, children, footer, onClose, subHeader }: {
   title: string;
   children: ReactNode;
   footer: ReactNode;
   onClose?: () => void;
+  subHeader?: ReactNode;
 }) => {
   const { closeDrawer } = useDrawerActions();
 
@@ -23,7 +24,9 @@ export const DrawerLayout = ({ title, children, footer, onClose }: {
         </IconButton>
       </Box>
 
-      <Divider sx={{ mb: 2 }} />
+      <Divider sx={{ mb: subHeader ? 0 : 2 }} />
+
+      {subHeader}
 
       {/* Scrollable content */}
       <Box sx={{ flex: 1, overflowY: 'auto', mr: -2, pr: 2, overscrollBehavior: 'contain' }}>

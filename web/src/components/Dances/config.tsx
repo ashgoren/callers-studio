@@ -19,6 +19,7 @@ export const newRecord: DanceInsert = {
   swing_16: null,
   url: '',
   video: '',
+  figures: [],
 };
 
 
@@ -49,6 +50,28 @@ export const columns: MRT_ColumnDef<Dance>[] = [
     size: 200,
     minSize: 170,
     Cell: ({ row }) => row.original.dances_choreographers.map(dc => dc.choreographer.name).join(', '),
+    meta: { inputType: 'relation' },
+  },
+  {
+    id: 'figures',
+    header: 'Figures',
+    enableColumnFilter: false,
+    enableSorting: false,
+    Cell: ({ row }) => {
+      const figures = row.original.figures ?? [];
+      if (!figures.length) return null;
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {figures.map((figure, index) => (
+            <div key={index} style={{ display: 'flex', gap: 8 }}>
+              <span style={{ width: 28, flexShrink: 0 }}>{figure.phrase}</span>
+              <span style={{ width: 24, flexShrink: 0 }}>{figure.beats ?? ''}</span>
+              <span>{figure.description}</span>
+            </div>
+          ))}
+        </div>
+      );
+    },
     meta: { inputType: 'relation' },
   },
   {
@@ -187,6 +210,7 @@ export const tableInitialState = {
   columnPinning: { left: ['title'] },
   columnVisibility: {
     url: false,
+    figures: false,
   },
   density: 'compact' as const,
   pagination: { pageSize: 100, pageIndex: 0 }

@@ -1,6 +1,6 @@
 import React, { useState, useMemo, type ReactNode } from 'react';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { Box, TextField, Button, Checkbox, FormControlLabel, Autocomplete } from '@mui/material';
+import { Box, TextField, Button, Checkbox, FormControlLabel, Autocomplete, Tabs, Tab } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import { useConfirm } from 'material-ui-confirm';
 import { DrawerLayout } from './DrawerLayout';
@@ -24,10 +24,11 @@ type RecordEditProps<TData extends MRT_RowData> = {
   hasPendingRelationChanges: boolean;
   selectOptions?: Record<string, { value: number; label: string }[]>;
   relationEditors?: Record<string, ReactNode>;
+  extraTabs?: { label: string; content: ReactNode }[];
 };
 
 export const RecordEdit = <TData extends MRT_RowData>({
-  data, columns, title, onSave, hasPendingRelationChanges, selectOptions = {}, relationEditors = {},
+  data, columns, title, onSave, hasPendingRelationChanges, selectOptions = {}, relationEditors = {}, extraTabs = [],
 }: RecordEditProps<TData>) => {
   const confirm = useConfirm();
   const { mode } = useDrawerState();
@@ -44,6 +45,7 @@ export const RecordEdit = <TData extends MRT_RowData>({
 
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<Partial<TData>>({ ...data });
+  const [tab, setTab] = useState(0);
 
   const isDirty = useMemo(() => {
     return Object.keys(formData).some((key) => formData[key] !== data[key]);
@@ -87,6 +89,12 @@ export const RecordEdit = <TData extends MRT_RowData>({
     <DrawerLayout
       title={title || 'Edit'}
       onClose={handleCancel}
+      subHeader={extraTabs.length > 0 ? (
+        <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
+          <Tab label='Details' />
+          {extraTabs.map((t, i) => <Tab key={i} label={t.label} />)}
+        </Tabs>
+      ) : undefined}
       footer={
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
@@ -111,73 +119,77 @@ export const RecordEdit = <TData extends MRT_RowData>({
         </Box>
       }
     >
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-        {columns.map((col, i) => {
-          const colDef = col as ColumnDefWithMeta<TData>;
-          const colId = colDef.id ?? ('accessorKey' in col ? String(col.accessorKey) : String(i));
+      {tab === 0 && (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+          {columns.map((col, i) => {
+            const colDef = col as ColumnDefWithMeta<TData>;
+            const colId = colDef.id ?? ('accessorKey' in col ? String(col.accessorKey) : String(i));
 
-          if (colDef.meta?.inputType === 'relation') {
-            const editor = relationEditors[colId];
-            return editor ? <React.Fragment key={colId}>{editor}</React.Fragment> : null;
-          }
+            if (colDef.meta?.inputType === 'relation') {
+              const editor = relationEditors[colId];
+              return editor ? <React.Fragment key={colId}>{editor}</React.Fragment> : null;
+            }
 
-          if (colDef.meta?.readonly || !('accessorKey' in col)) return null;
+            if (colDef.meta?.readonly || !('accessorKey' in col)) return null;
 
-          const key = col.accessorKey as string;
-          const label = typeof col.header === 'string' ? col.header : key;
-          const value = formData[key];
-          const fieldType = colDef.meta?.inputType;
-          const options = selectOptions[key] ?? [];
-          const selectedOption = options.find(o => o.value === value) ?? null;
+            const key = col.accessorKey as string;
+            const label = typeof col.header === 'string' ? col.header : key;
+            const value = formData[key];
+            const fieldType = colDef.meta?.inputType;
+            const options = selectOptions[key] ?? [];
+            const selectedOption = options.find(o => o.value === value) ?? null;
 
-          return (
-            <Box key={key}>
-              {fieldType === 'boolean' ? (
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={Boolean(value)}
-                      onChange={(e) => handleChange(key, e.target.checked)}
-                    />
-                  }
-                  label={label}
-                />
-              ) : fieldType === 'date' ? (
-                <DatePicker
-                  label={label}
-                  value={value ? new Date(value as string) : null}
-                  onChange={(newValue) => handleChange(key, newValue)}
-                  slotProps={{ textField: { size: 'small', fullWidth: true } }}
-                />
-              ) : fieldType === 'select' ? (
-                <Autocomplete
-                  options={options}
-                  getOptionLabel={(o) => o.label}
-                  value={selectedOption}
-                  onChange={(_, newValue) => handleChange(key, newValue?.value ?? null)}
-                  isOptionEqualToValue={(o, v) => o.value === v.value}
-                  renderInput={(params) => <TextField {...params} label={label} size='small' />}
-                  clearOnEscape
-                  fullWidth
-                />
-              ) : (
-                <TextField
-                  label={label}
-                  type={fieldType}
-                  value={value ?? ''}
-                  onChange={(e) =>
-                    handleChange(key, fieldType === 'number' ? Number(e.target.value) : e.target.value)
-                  }
-                  fullWidth
-                  size='small'
-                  multiline={fieldType === 'text' && String(data[key as keyof TData] ?? '').length > 100}
-                  rows={fieldType === 'text' && String(data[key as keyof TData] ?? '').length > 100 ? 3 : 1}
-                />
-              )}
-            </Box>
-          );
-        })}
-      </Box>
+            return (
+              <Box key={key}>
+                {fieldType === 'boolean' ? (
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={Boolean(value)}
+                        onChange={(e) => handleChange(key, e.target.checked)}
+                      />
+                    }
+                    label={label}
+                  />
+                ) : fieldType === 'date' ? (
+                  <DatePicker
+                    label={label}
+                    value={value ? new Date(value as string) : null}
+                    onChange={(newValue) => handleChange(key, newValue)}
+                    slotProps={{ textField: { size: 'small', fullWidth: true } }}
+                  />
+                ) : fieldType === 'select' ? (
+                  <Autocomplete
+                    options={options}
+                    getOptionLabel={(o) => o.label}
+                    value={selectedOption}
+                    onChange={(_, newValue) => handleChange(key, newValue?.value ?? null)}
+                    isOptionEqualToValue={(o, v) => o.value === v.value}
+                    renderInput={(params) => <TextField {...params} label={label} size='small' />}
+                    clearOnEscape
+                    fullWidth
+                  />
+                ) : (
+                  <TextField
+                    label={label}
+                    type={fieldType}
+                    value={value ?? ''}
+                    onChange={(e) =>
+                      handleChange(key, fieldType === 'number' ? Number(e.target.value) : e.target.value)
+                    }
+                    fullWidth
+                    size='small'
+                    multiline={fieldType === 'text' && String(data[key as keyof TData] ?? '').length > 100}
+                    rows={fieldType === 'text' && String(data[key as keyof TData] ?? '').length > 100 ? 3 : 1}
+                  />
+                )}
+              </Box>
+            );
+          })}
+        </Box>
+      )}
+
+      {extraTabs.map((t, i) => tab === i + 1 ? <React.Fragment key={i}>{t.content}</React.Fragment> : null)}
 
     </DrawerLayout>
   );

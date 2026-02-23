@@ -10,14 +10,16 @@ import { useDanceTypes } from '@/hooks/useDanceTypes';
 import { useFormations } from '@/hooks/useFormations';
 import { useProgressions } from '@/hooks/useProgressions';
 import { usePendingRelations } from '@/hooks/usePendingRelations';
+import { useFigures } from '@/hooks/useFigures';
 import { RelationEditor } from '@/components/RelationEditor';
+import { FiguresEditor } from './FiguresEditor';
 import { Spinner, ErrorMessage } from '@/components/shared';
 import { columns, newRecord } from './config';
 import { RecordView } from '@/components/RecordView';
 import { RecordEdit } from '@/components/RecordEdit';
 import { useDrawerState } from '@/contexts/DrawerContext';
 import { useUndoActions, dbRecord, beforeValues, relationOps } from '@/contexts/UndoContext';
-import type { DanceInsert, DanceUpdate } from '@/lib/types/database';
+import type { Dance as DanceType, DanceInsert, DanceUpdate } from '@/lib/types/database';
 
 export const Dance = ({ id }: { id?: number }) => {
   const { mode } = useDrawerState();
@@ -51,11 +53,13 @@ export const Dance = ({ id }: { id?: number }) => {
   const pendingChoreographers = usePendingRelations();
   const pendingKeyMoves = usePendingRelations();
   const pendingVibes = usePendingRelations();
+  const pendingFigures = useFigures(dance);
 
   const handleSave = async (updates: DanceUpdate) => {
+    const updatesWithFigures = { ...updates, figures: pendingFigures.figures };
     const { id: danceId } = mode === 'create'
-      ? await createDance(updates as DanceInsert)
-      : await updateDance({ id: dance!.id, updates });
+      ? await createDance(updatesWithFigures as DanceInsert)
+      : await updateDance({ id: dance!.id, updates: updatesWithFigures });
 
     const { added: addedChoreographers, removed: removedChoreographers } = await pendingChoreographers.commitChanges(
       (choreographerId) => addChoreographer({ danceId, choreographerId }),
@@ -79,7 +83,7 @@ export const Dance = ({ id }: { id?: number }) => {
           {
             type: 'insert',
             table: 'dances',
-            record: { id: danceId, ...updates }
+            record: { id: danceId, ...updatesWithFigures }
           },
           ...relationOps('dances_choreographers', addedChoreographers, []),
           ...relationOps('dances_key_moves', addedKeyMoves, []),
@@ -97,8 +101,8 @@ export const Dance = ({ id }: { id?: number }) => {
             type: 'update',
             table: 'dances',
             id: danceId,
-            before: beforeValues(dance!, updates, newRecord),
-            after: dbRecord(updates, newRecord)
+            before: beforeValues(dance!, updatesWithFigures, newRecord),
+            after: dbRecord(updatesWithFigures, newRecord)
           },
           ...relationOps('dances_choreographers', addedChoreographers, removedChoreographers),
           ...relationOps('dances_key_moves', addedKeyMoves, removedKeyMoves),
@@ -156,11 +160,11 @@ export const Dance = ({ id }: { id?: number }) => {
 
   return (
     <RecordEdit
-      data={dance ?? newRecord}
+      data={dance ?? newRecord as Partial<DanceType>}
       columns={columns}
       title={dance ? `Edit: ${dance.title}` : 'New Dance'}
       onSave={handleSave}
-      hasPendingRelationChanges={pendingChoreographers.hasPendingChanges || pendingKeyMoves.hasPendingChanges || pendingVibes.hasPendingChanges}
+      hasPendingRelationChanges={pendingChoreographers.hasPendingChanges || pendingKeyMoves.hasPendingChanges || pendingVibes.hasPendingChanges || pendingFigures.hasPendingChanges}
       selectOptions={selectOptions}
       relationEditors={{
         choreographers: <RelationEditor
@@ -194,6 +198,15 @@ export const Dance = ({ id }: { id?: number }) => {
           pending={pendingVibes}
         />,
       }}
+      extraTabs={[{
+        label: 'Figures',
+        content: <FiguresEditor
+          figures={pendingFigures.figures}
+          onAdd={pendingFigures.addFigure}
+          onUpdate={pendingFigures.updateFigure}
+          onDelete={pendingFigures.deleteFigure}
+        />
+      }]}
     />
   );
 };
