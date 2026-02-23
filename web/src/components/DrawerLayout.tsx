@@ -26,7 +26,7 @@ export const DrawerLayout = ({ title, children, footer, onClose }: {
       <Divider sx={{ mb: 2 }} />
 
       {/* Scrollable content */}
-      <Box sx={{ flex: 1, overflowY: 'auto', mr: -2, pr: 2 }}>
+      <Box sx={{ flex: 1, overflowY: 'auto', mr: -2, pr: 2, overscrollBehavior: 'contain' }}>
         {children}
       </Box>
 

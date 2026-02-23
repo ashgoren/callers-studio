@@ -52,7 +52,7 @@ export const RecordView = <TData extends Record<string, any>>({ data, columns, t
               <Typography variant='caption' color='text.secondary'>
                 {label}
               </Typography>
-              <Typography variant='body1' component='div'>
+              <Typography variant='body1' component='div' sx={{ wordBreak: 'break-all' }}>
                 {renderCell(cell)}
               </Typography>
             </Box>
