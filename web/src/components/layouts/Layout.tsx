@@ -12,7 +12,7 @@ import type { ReactNode } from 'react';
 export const Layout = ({ children }: { children: ReactNode }) => {
   const { isOpen } = useDrawerState();
 
-  const DRAWER_WIDTH = 400;
+  const DRAWER_WIDTH = 560;
 
   return (
     <ThemeProvider theme={theme} defaultMode='system'>

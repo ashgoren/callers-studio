@@ -5,7 +5,7 @@ import { useDrawerActions } from '@/contexts/DrawerContext';
 import { Dance } from './Dances/Dance';
 import { Program } from './Programs/Program';
 
-const DRAWER_WIDTH = 400;
+const DRAWER_WIDTH = 560;
 
 const DETAIL_COMPONENTS: Record<string, React.ComponentType<{ id?: number }>> = {
   dance: Dance,
