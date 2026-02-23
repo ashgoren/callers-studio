@@ -7,7 +7,8 @@
     "dev": "supabase gen types typescript --local > ./src/lib/types/database_generated.ts && vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "tsc": "tsc -b"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
