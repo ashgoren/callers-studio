@@ -22,11 +22,6 @@ export const useNotify = () => {
         </>
       )
     }),
-
-    // toastInfo: (message: string) => enqueueSnackbar(message, {
-    //   variant: 'info'
-    // }),
-
     toastError: (message: string) => enqueueSnackbar(message, {
       variant: 'error',
       anchorOrigin: { vertical: 'top', horizontal: 'center' }

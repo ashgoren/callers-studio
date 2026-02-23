@@ -2,7 +2,7 @@
 import { createContext, useContext, useCallback, useState, useMemo, useEffect, useRef, type ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 import { queryClient } from '@/lib/react-query';
-import { closeSnackbar } from 'notistack';
+import { closeSnackbar, enqueueSnackbar } from 'notistack';
 import { useDrawerActions } from '@/contexts/DrawerContext';
 
 type UndoOp =
@@ -62,14 +62,21 @@ function sortOps(ops: UndoOp[]): UndoOp[] {
   });
 }
 
-async function executeOps(ops: UndoOp[]) {
+async function executeOps(ops: UndoOp[], onPartial?: () => void): Promise<void> {
   const sorted = sortOps(ops);
+  let skipped = 0;
 
   for (const op of sorted) {
     switch (op.type) {
       case 'insert': {
         const { error } = await supabase.from(op.table).insert(op.record);
-        if (error) throw error;
+        if (error) {
+          if (error.code === '23503' && isDependent(op)) {
+            skipped++;
+          } else {
+            throw error;
+          }
+        }
         break;
       }
       case 'delete': {
@@ -87,6 +94,7 @@ async function executeOps(ops: UndoOp[]) {
 
   // Invalidate all queries since we don't have enough info to target just relation tables
   queryClient.invalidateQueries();
+  if (skipped > 0) onPartial?.();
 }
 
 export const UndoProvider = ({ children }: { children: ReactNode }) => {
@@ -128,10 +136,10 @@ export const UndoProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       const undoOps = invertOps(action.ops);
-      await executeOps(undoOps);
+      closeSnackbar();
+      await executeOps(undoOps, () => enqueueSnackbar('Restored with some relations missing — linked records may have been deleted.', { variant: 'warning' }));
       setUndoStack(prev => prev.slice(0, -1));
       setRedoStack(prev => [...prev, { label: action.label, ops: undoOps }]);
-      closeSnackbar();
       if (undoOps.some(op => op.type === 'delete' && !isDependent(op))) {
         closeDrawerRef.current();
       }
@@ -146,10 +154,10 @@ export const UndoProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       const redoOps = invertOps(action.ops);
-      await executeOps(redoOps);
+      closeSnackbar();
+      await executeOps(redoOps, () => enqueueSnackbar('Restored with some relations missing — linked records may have been deleted.', { variant: 'warning' }));
       setRedoStack(prev => prev.slice(0, -1));
       setUndoStack(prev => [...prev, { label: action.label, ops: redoOps }]);
-      closeSnackbar();
       if (redoOps.some(op => op.type === 'delete' && !isDependent(op))) {
         closeDrawerRef.current();
       }
