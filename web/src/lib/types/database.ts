@@ -12,8 +12,16 @@ export type DanceTypeRow = Tables['dance_types']['Row'];
 export type FormationRow = Tables['formations']['Row'];
 export type ProgressionRow = Tables['progressions']['Row'];
 
+export type FigureItem = {
+  phrase: string;
+  beats: number | null;
+  order: number;
+  description: string;
+};
+
 export type DanceRow = Tables['dances']['Row'];
-export type Dance = DanceRow & {
+export type Dance = Omit<DanceRow, 'figures'> & {
+  figures: FigureItem[],
   programs_dances: { id: number; order: number; program: ProgramRow }[],
   dances_choreographers: { id: number; choreographer: ChoreographerRow }[],
   dances_key_moves: { id: number; key_move: KeyMoveRow }[],

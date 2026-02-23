@@ -78,6 +78,7 @@ export type Database = {
           created_at: string
           dance_type_id: number | null
           difficulty: number | null
+          figures: Json
           formation_id: number | null
           id: number
           moves: string | null
@@ -94,6 +95,7 @@ export type Database = {
           created_at?: string
           dance_type_id?: number | null
           difficulty?: number | null
+          figures?: Json
           formation_id?: number | null
           id?: number
           moves?: string | null
@@ -110,6 +112,7 @@ export type Database = {
           created_at?: string
           dance_type_id?: number | null
           difficulty?: number | null
+          figures?: Json
           formation_id?: number | null
           id?: number
           moves?: string | null
