@@ -1,5 +1,6 @@
 import { Box } from '@mui/material';
-import { useDrawerActions } from '@/contexts/DrawerContext';
+import { useNavigate } from 'react-router';
+import { MODEL_PATHS } from '@/lib/types/database';
 import type { DrawerModel } from '@/lib/types/database';
 
 export const RelationCell = <TRelation,>({ items, model, getId, getLabel }: {
@@ -8,7 +9,7 @@ export const RelationCell = <TRelation,>({ items, model, getId, getLabel }: {
   getId: (item: TRelation) => number;
   getLabel: (item: TRelation) => string;
 }) => {
-  const { openDrawer } = useDrawerActions();
+  const navigate = useNavigate();
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.5 }}>
@@ -17,7 +18,7 @@ export const RelationCell = <TRelation,>({ items, model, getId, getLabel }: {
           key={getId(item)}
           onClick={(e) => {
             e.stopPropagation();
-            openDrawer(model, getId(item));
+            navigate(`${MODEL_PATHS[model]}/${getId(item)}`);
           }}
           sx={{ cursor: 'pointer', textDecoration: 'underline', color: 'secondary.main', '&:hover': { color: 'secondary.dark' } }}
         >

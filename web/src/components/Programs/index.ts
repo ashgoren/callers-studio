@@ -1,2 +1,2 @@
 export * from './Programs';
-export * from './Program';
+export * from './ProgramPage';

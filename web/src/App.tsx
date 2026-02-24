@@ -3,12 +3,11 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './lib/react-query';
 import { TitleProvider } from './contexts/TitleContext';
-import { DrawerProvider } from '@/contexts/DrawerContext';
 import { UndoProvider } from '@/contexts/UndoContext';
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router';
+import { createBrowserRouter, RouterProvider, Navigate, Outlet } from 'react-router';
 import { Layout } from './components/layouts/Layout';
-import { Dances } from './components/Dances';
-import { Programs } from './components/Programs';
+import { Dances, DancePage } from './components/Dances';
+import { Programs, ProgramPage } from './components/Programs';
 import { SettingsPage, ChoreographersList, KeyMovesList, VibesList } from './components/Settings';
 import { Spinner } from '@/components/shared';
 import { SignInPage } from '@/components/auth/SignInPage';
@@ -24,41 +23,53 @@ const ProtectedRoute = () => {
   return <Outlet />;
 };
 
-function App() {
-  logEnvironment();
+const AppShell = () => {
   const { user } = useAuth();
   useRealtimeSync(user);
 
   return (
-    <BrowserRouter>
-      <LocalizationProvider dateAdapter={AdapterDateFns}>
-        <QueryClientProvider client={queryClient}>
-          <DrawerProvider>
-            <UndoProvider>
-              <TitleProvider>
-                <ConfirmProvider>
-                  <Layout>
-                    <Routes>
-                      <Route path='/signin' element={<SignInPage />} />
-                      <Route element={<ProtectedRoute />}>
-                        <Route path='/' element={<Navigate to='/dances' />} />
-                        <Route path='/dances' element={<Dances />} />
-                        <Route path='/programs' element={<Programs />} />
-                        <Route path='/settings' element={<SettingsPage />} />
-                        <Route path='/settings/choreographers' element={<ChoreographersList />} />
-                        <Route path='/settings/key-moves' element={<KeyMovesList />} />
-                        <Route path='/settings/vibes' element={<VibesList />} />
-                      </Route>
-                    </Routes>
-                  </Layout>
-                </ConfirmProvider>
-              </TitleProvider>
-            </UndoProvider>
-          </DrawerProvider>
-        </QueryClientProvider>
-      </LocalizationProvider>
-    </BrowserRouter>
-  )
+    <LocalizationProvider dateAdapter={AdapterDateFns}>
+      <QueryClientProvider client={queryClient}>
+        <UndoProvider>
+          <TitleProvider>
+            <ConfirmProvider>
+              <Layout>
+                <Outlet />
+              </Layout>
+            </ConfirmProvider>
+          </TitleProvider>
+        </UndoProvider>
+      </QueryClientProvider>
+    </LocalizationProvider>
+  );
+};
+
+const router = createBrowserRouter([
+  {
+    element: <AppShell />,
+    children: [
+      { path: '/signin', element: <SignInPage /> },
+      {
+        element: <ProtectedRoute />,
+        children: [
+          { path: '/', element: <Navigate to='/dances' /> },
+          { path: '/dances', element: <Dances /> },
+          { path: '/dances/:id', element: <DancePage /> },
+          { path: '/programs', element: <Programs /> },
+          { path: '/programs/:id', element: <ProgramPage /> },
+          { path: '/settings', element: <SettingsPage /> },
+          { path: '/settings/choreographers', element: <ChoreographersList /> },
+          { path: '/settings/key-moves', element: <KeyMovesList /> },
+          { path: '/settings/vibes', element: <VibesList /> },
+        ],
+      },
+    ],
+  },
+]);
+
+function App() {
+  logEnvironment();
+  return <RouterProvider router={router} />;
 }
 
-export default App
+export default App;
