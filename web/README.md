@@ -22,9 +22,11 @@ Supabase → src/hooks/ → Components
 ```
 
 - **`src/hooks/`** — TanStack Query v5 wrappers with Supabase calls inlined. Handle CRUD, caching, and invalidation. Primary models eager-load relations via `.select('*, relation(*)')`. Auxiliary tables use lightweight selects (junction IDs only for delete-guarding).
-- **`src/components/{Entity}/config.tsx`** — Column definitions, default form values, query builder config (primary models only).
+- **`src/components/{Entity}/config.tsx`** — Column definitions for Material React Table, default form values (`newRecord`), query builder config.
 - **`TablePage`** — Generic wrapper connecting a data hook + column config to Material React Table. Used by primary models (Dances, Programs).
-- **`RecordDrawer`** — Right-side drawer for view/edit/create. Managed by `DrawerContext`.
+- **`src/components/{Entity}/{Entity}Page.tsx`** — Routing wrapper: loads record, manages view/edit toggle. Create mode handled via `id === 'new'`.
+- **`src/components/{Entity}/{Entity}View.tsx`** — View mode with explicit JSX. Owns delete flow.
+- **`src/components/{Entity}/{Entity}Edit.tsx`** — Edit/create form with explicit fields. Guards unsaved changes via `useBlocker` + `beforeunload`.
 - **`src/components/Settings/`** — Hub page at `/settings` with inline-editable list components for auxiliary tables (choreographers, key moves, vibes, etc.).
 
 ---
@@ -137,13 +139,13 @@ export * from './KeyMovesList';
 ```typescript
 import { KeyMovesList } from './components/Settings';
 
-// inside <ProtectedRoute>:
-<Route path='/settings/key-moves' element={<KeyMovesList />} />
+// inside the ProtectedRoute children array:
+{ path: '/settings/key-moves', element: <KeyMovesList /> },
 ```
 
 No nav changes needed — already under `/settings`.
 
-#### 8. Surface in Dance Table and Drawer (if applicable)
+#### 8. Surface in Dance Table and Edit Form (if applicable)
 
 If this auxiliary table should appear on dance records, follow the steps in [Adding a New Relation Between Tables](#adding-a-new-relation-between-tables) — specifically:
 
@@ -151,13 +153,14 @@ If this auxiliary table should appear on dance records, follow the steps in [Add
 - Update the select string in `src/hooks/useDances.ts` to eager-load the relation
 - Create mutation hooks in `src/hooks/useDances{Model}s.ts` with inlined Supabase add/remove functions
 - Update `buildRelationsColumns` in `src/hooks/useDances.ts` with a computed name string (if users should filter by it)
-- Add a `RelationCell` column to `src/components/Dances/config.tsx`
-- Add `RelationEditor` to the `relationEditors` prop in `src/components/Dances/Dance.tsx` (view mode is automatic via `RecordView`)
+- Add a column to `src/components/Dances/config.tsx` with `Cell` showing a plain text join
+- Add `usePendingRelations`, the mutation hooks, and a `RelationEditor` to `DanceEdit.tsx`
+- Add the display field to `DanceView.tsx`
 - Add computed field to `queryFields` in `config.tsx` (if filtering needed)
 
 ---
 
-### Adding a New Primary Model (Full Table + Drawer)
+### Adding a New Primary Model (Full Table + Detail Pages)
 
 #### 1. Database
 
@@ -169,10 +172,15 @@ supabase gen types typescript --local > src/lib/types/database_generated.ts
 
 #### 2. Custom Types — `src/lib/types/database.ts`
 
-Add the model name to the `Model` union and define the types:
+Add the model name to `DrawerModel` (if it needs `RelationCell` clickable chips from other views) and define the types:
 
 ```typescript
-export type Model = 'dance' | 'program' | 'choreographer' | 'venue'; // add here
+export type DrawerModel = 'dance' | 'program' | 'venue'; // add if needed
+export const MODEL_PATHS: Record<DrawerModel, string> = {
+  dance: '/dances',
+  program: '/programs',
+  venue: '/venues', // add if needed
+};
 
 export type VenueRow = Tables['venues']['Row'];
 export type Venue = VenueRow & {
@@ -181,8 +189,6 @@ export type Venue = VenueRow & {
 export type VenueInsert = Tables['venues']['Insert'];
 export type VenueUpdate = Tables['venues']['Update'];
 ```
-
-`*Row` is the bare DB row. `*` extends it with relation arrays. `*Insert`/`*Update` come directly from the generated types.
 
 #### 3. Query Hook — `src/hooks/useVenues.ts`
 
@@ -206,22 +212,12 @@ export const useVenues = () =>
 export const useVenue = (id: number) =>
   useQuery({ queryKey: ['venue', id], queryFn: () => getVenue(id), enabled: !!id });
 
-export const useCreateVenue = () => {
-  const { toastError } = useNotify();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (venue: VenueInsert) => createVenue(venue),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['venues'] }),
-    onError: (err: Error) => toastError(err.message),
-  });
-};
-
-// useUpdateVenue, useDeleteVenue follow the same pattern
+export const useCreateVenue = () => { ... };
+export const useUpdateVenue = () => { ... };
+export const useDeleteVenue = () => { ... };
 ```
 
 #### 4. Config — `src/components/Venues/config.tsx`
-
-See [Adding Fields to a Config](#adding-fields-to-a-config) below for full details on column definitions.
 
 ```typescript
 import type { MRT_ColumnDef } from 'material-react-table';
@@ -233,8 +229,8 @@ export const newRecord: VenueInsert = {
 };
 
 export const columns: MRT_ColumnDef<Venue>[] = [
-  { accessorKey: 'name', header: 'Name', size: 250 },
-  { accessorKey: 'location', header: 'Location', size: 200 },
+  { accessorKey: 'name', header: 'Name', size: 250, meta: { inputType: 'text' } },
+  { accessorKey: 'location', header: 'Location', size: 200, meta: { inputType: 'text' } },
 ];
 
 export const tableInitialState = {
@@ -254,53 +250,64 @@ export const defaultQuery = {
 };
 ```
 
-#### 5. Detail Component — `src/components/Venues/Venue.tsx`
+#### 5. Routing Wrapper — `src/components/Venues/VenuePage.tsx`
 
-Orchestrates view/edit/create for one record:
+Loads the record and manages view/edit toggle. `id === 'new'` goes straight to edit mode.
 
 ```typescript
-import { useDrawerState, useDrawerActions } from '@/contexts/DrawerContext';
-import { RecordEdit } from '@/components/RecordEdit';
-import { RecordView } from '@/components/RecordView';
-import { useVenue, useCreateVenue, useUpdateVenue, useDeleteVenue } from '@/hooks/useVenues';
-import { columns, newRecord } from './config';
+import { useState } from 'react';
+import { useParams } from 'react-router';
+import { Spinner, ErrorMessage } from '@/components/shared';
+import { useVenue } from '@/hooks/useVenues';
+import { VenueViewMode } from './VenueView';
+import { VenueEditMode } from './VenueEdit';
 
-export const Venue = ({ id }: { id?: number }) => {
-  const { mode } = useDrawerState();
-  const { closeDrawer } = useDrawerActions();
-  const { data: venue, isLoading } = useVenue(Number(id));
-  const { mutateAsync: create } = useCreateVenue();
-  const { mutateAsync: update } = useUpdateVenue();
-  const { mutateAsync: remove } = useDeleteVenue();
+export const VenuePage = () => {
+  const { id } = useParams();
+  if (id === 'new') return <VenueEditMode />;
+  return <VenueDetailPage id={Number(id!)} />;
+};
 
-  const handleSave = async (updates: any) => {
-    if (mode === 'create') {
-      await create(updates);
-    } else {
-      await update({ id: venue!.id, updates });
-    }
-  };
-
-  const handleDelete = async () => {
-    await remove({ id: venue!.id });
-    closeDrawer();
-  };
-
-  if (mode === 'create') {
-    return <RecordEdit data={newRecord} columns={columns} onSave={handleSave} hasPendingRelationChanges={false} />;
-  }
-
-  if (isLoading || !venue) return null;
-
-  if (mode === 'edit') {
-    return <RecordEdit data={venue} columns={columns} onSave={handleSave} hasPendingRelationChanges={false} />;
-  }
-
-  return <RecordView data={venue} columns={columns} onDelete={handleDelete} />;
+const VenueDetailPage = ({ id }: { id: number }) => {
+  const { data: venue, isLoading, error } = useVenue(id);
+  const [isEditing, setIsEditing] = useState(false);
+  if (isLoading) return <Spinner />;
+  if (error) return <ErrorMessage error={error} />;
+  if (!venue) return <ErrorMessage error={new Error('Venue not found')} />;
+  if (isEditing) return <VenueEditMode venue={venue} onCancel={() => setIsEditing(false)} />;
+  return <VenueViewMode venue={venue} onEdit={() => setIsEditing(true)} />;
 };
 ```
 
-#### 6. Table Component — `src/components/Venues/Venues.tsx`
+#### 6. View Component — `src/components/Venues/VenueView.tsx`
+
+Explicit JSX for each field. Owns the delete flow (confirm → delete → pushAction undo → navigate to list).
+
+Use `DanceView.tsx` as the reference implementation. Key elements:
+- Back button → `navigate('/venues')`
+- Edit + Delete buttons in the header
+- `Field` label+value helper component for consistent layout
+- `useTitle` for page title
+- Delete pushes an undo action to `UndoContext` before navigating away
+
+#### 7. Edit/Create Component — `src/components/Venues/VenueEdit.tsx`
+
+Explicit form fields with unsaved-changes protection. Use `DanceEdit.tsx` as the reference implementation. Key patterns:
+
+```typescript
+const [isSaved, setIsSaved] = useState(false);
+const blocker = useBlocker(!isSaved && (isDirty || hasPendingChanges));
+
+// After save in create mode:
+flushSync(() => setIsSaved(true)); // disable blocker before navigate fires
+navigate(`/venues/${venueId}`);
+
+// After cancel confirm in create mode:
+flushSync(() => setIsSaved(true));
+navigate('/venues');
+```
+
+#### 8. Table Component — `src/components/Venues/Venues.tsx`
 
 ```typescript
 import { useEffect } from 'react';
@@ -308,12 +315,13 @@ import { useTitle } from '@/contexts/TitleContext';
 import { TablePage } from '@/components/TablePage';
 import { useVenues } from '@/hooks/useVenues';
 import { columns, queryFields, defaultQuery, tableInitialState } from './config';
+import type { Venue } from '@/lib/types/database';
 
 export const Venues = () => {
   const { setTitle } = useTitle();
   useEffect(() => setTitle('Venues'), [setTitle]);
   return (
-    <TablePage
+    <TablePage<Venue>
       model='venue'
       useData={useVenues}
       columns={columns}
@@ -325,38 +333,26 @@ export const Venues = () => {
 };
 ```
 
-#### 7. Index File — `src/components/Venues/index.ts`
+#### 9. Index File — `src/components/Venues/index.ts`
 
 ```typescript
-export * from './Venue';
+export * from './VenuePage';
 export * from './Venues';
-export * from './config';
 ```
 
-#### 8. Wire Up the Drawer — `src/components/RecordDrawer.tsx`
-
-Add the component to the `DETAIL_COMPONENTS` map:
+#### 10. Add Routes — `src/App.tsx`
 
 ```typescript
-import { Venue } from './Venues/Venue';
+import { Venues, VenuePage } from './components/Venues';
 
-const DETAIL_COMPONENTS: Record<string, React.ComponentType<{ id?: number }>> = {
-  dance: Dance,
-  program: Program,
-  venue: Venue, // add this
-};
+// inside the ProtectedRoute children array:
+{ path: '/venues', element: <Venues /> },
+{ path: '/venues/:id', element: <VenuePage /> },
 ```
 
-#### 9. Add a Route — `src/App.tsx`
+The `:id` route handles both existing records (`/venues/42`) and create mode (`/venues/new`).
 
-```typescript
-import { Venues } from './components/Venues';
-
-// inside <Routes>:
-<Route path='/venues' element={<Venues />} />
-```
-
-#### 10. Add Nav Link — `src/components/layouts/NavBar.tsx`
+#### 11. Add Nav Link — `src/components/layouts/NavBar.tsx`
 
 Add `/venues` to the nav links list.
 
@@ -380,8 +376,7 @@ Add the join array to each side of the relation:
 
 ```typescript
 export type Dance = DanceRow & {
-  programs_dances: { id: number; order: number; program: ProgramRow }[],
-  dances_choreographers: { id: number; choreographer: ChoreographerRow }[],
+  // ...existing relations...
   dances_venues: { id: number; venue: VenueRow }[],  // add here
 };
 
@@ -427,7 +422,7 @@ export const useAddVenueToDance = () => {
 
 #### 5. Update the Hook's `select` Transform (if needed)
 
-In `src/hooks/useDances.ts`, if need a flattened string for query builder filtering, add it to the `buildRelationsColumns` helper:
+In `src/hooks/useDances.ts`, if you need a flattened string for query builder filtering, add it to the `buildRelationsColumns` helper:
 
 ```typescript
 const buildRelationsColumns = (dance: Dance) => ({
@@ -437,9 +432,9 @@ const buildRelationsColumns = (dance: Dance) => ({
 });
 ```
 
-#### 6. Add a Relation Column in the Config — `src/components/Dances/config.tsx`
+#### 6. Add a Column in the Config — `src/components/Dances/config.tsx`
 
-Add the column with `meta: { inputType: 'relation' }`. This tells `RecordEdit` to slot in the matching editor from the `relationEditors` prop, and tells `RecordView` to render it via the `Cell` function (which uses `RelationCell` for clickable drawer navigation).
+For table display. For auxiliary-table relations, use a plain text join. For primary-model relations (entities in `MODEL_PATHS`), use `RelationCell` with clickable chips:
 
 ```typescript
 {
@@ -459,47 +454,54 @@ Add the column with `meta: { inputType: 'relation' }`. This tells `RecordEdit` t
 },
 ```
 
-#### 7. Add Relation Editing to the Detail Component — `src/components/Dances/Dance.tsx`
+#### 7. Add Relation Display to `DanceView.tsx`
 
-Use `usePendingRelations` to stage add/remove before save. Pass `RelationEditor` via the `relationEditors` prop on `RecordEdit`, keyed by the column's `id`. No changes needed for view mode — `RecordView` automatically uses the column's `Cell` renderer.
+Add the field explicitly in the view JSX:
+
+```typescript
+<Field label='Venues'>
+  <RelationCell
+    items={dance.dances_venues}
+    model='venue'
+    getId={dv => dv.venue.id}
+    getLabel={dv => dv.venue.name}
+  />
+</Field>
+```
+
+#### 8. Add Relation Editing to `DanceEdit.tsx`
+
+Use `usePendingRelations` to stage add/remove before save, and add a `RelationEditor` in the form JSX:
 
 ```typescript
 const pendingVenues = usePendingRelations();
 const { mutateAsync: addVenue } = useAddVenueToDance();
 const { mutateAsync: removeVenue } = useRemoveVenueFromDance();
 
-const handleSave = async (updates: DanceUpdate) => {
-  const { id: danceId } = mode === 'create'
-    ? await createDance(updates as DanceInsert)
-    : await updateDance({ id: dance!.id, updates });
+// In handleSave:
+const { added: addedVenues, removed: removedVenues } = await pendingVenues.commitChanges(
+  (venueId) => addVenue({ danceId, venueId }),
+  (venueId) => removeVenue({ danceId, venueId }),
+);
 
-  await pendingVenues.commitChanges(
-    (venueId) => addVenue({ danceId, venueId }),
-    (venueId) => removeVenue({ danceId, venueId }),
-  );
-};
-
-<RecordEdit
-  ...
-  hasPendingRelationChanges={pendingVenues.hasPendingChanges}
-  relationEditors={{
-    venues: <RelationEditor
-      model='venue' label='Venues'
-      relations={dance?.dances_venues ?? []}
-      getRelationId={(dv) => dv.venue.id}
-      getRelationLabel={(dv) => dv.venue.name}
-      options={venues ?? []}
-      getOptionId={(venue) => venue.id}
-      getOptionLabel={(venue) => venue.name}
-      pending={pendingVenues}
-    />,
-  }}
+// In JSX:
+<RelationEditor
+  model='venue' label='Venues'
+  relations={dance?.dances_venues ?? []}
+  getRelationId={(dv) => dv.venue.id}
+  getRelationLabel={(dv) => dv.venue.name}
+  options={venues ?? []}
+  getOptionId={(venue) => venue.id}
+  getOptionLabel={(venue) => venue.name}
+  pending={pendingVenues}
 />
 ```
 
-#### 8. Add to Query Builder Fields (if applicable)
+Also update `hasPendingChanges` to include `pendingVenues.hasPendingChanges`, and include the undo ops in `pushAction`.
 
-In `config.tsx`, add a field using the computed name string from step 6:
+#### 9. Add to Query Builder Fields (if applicable)
+
+In `config.tsx`, add a field using the computed name string from step 5:
 
 ```typescript
 export const queryFields = [
@@ -604,7 +606,7 @@ const DANCE_SELECT = '*, ..., formation:formations(id, name, sort_order)';
 
 #### 5. Update `config.tsx`
 
-Add `formation_id: null` to `newRecord`. Add a column with `accessorKey` (so RecordEdit includes it in form submission), a `Cell` renderer showing the name, and `meta: { inputType: 'select' }`:
+Add `formation_id: null` to `newRecord`. Add a column for the table:
 
 ```typescript
 export const newRecord: DanceInsert = {
@@ -612,7 +614,7 @@ export const newRecord: DanceInsert = {
   formation_id: null,
 };
 
-// In columns:
+// In columns (table display only):
 {
   accessorKey: 'formation_id',
   header: 'Formation',
@@ -623,127 +625,40 @@ export const newRecord: DanceInsert = {
 },
 ```
 
-Add to `queryFields` — the query evaluator automatically resolves FK objects with a `.name` property, so no additional evaluator changes are needed:
+Add to `queryFields` — the query evaluator automatically resolves FK objects with a `.name` property:
 
 ```typescript
 { name: 'formation', label: 'Formation', inputType: 'string' },
 ```
 
-#### 6. Wire Up in `Dance.tsx`
+#### 6. Add to `DanceView.tsx`
 
-Import the hook, build the `selectOptions` map, and pass it to both `RecordEdit` instances:
+Add the field explicitly:
+
+```typescript
+<Field label='Formation'>{dance.formation?.name}</Field>
+```
+
+#### 7. Add to `DanceEdit.tsx`
+
+Import the hook, add an `Autocomplete` field in the form JSX:
 
 ```typescript
 const { data: formations } = useFormations();
 
-const selectOptions = {
-  // ...existing entries...
-  formation_id: (formations ?? []).map(f => ({ value: f.id, label: f.name })),
-};
-
-// Pass to RecordEdit:
-<RecordEdit ... selectOptions={selectOptions}>
+// In JSX:
+<Autocomplete
+  options={formations ?? []}
+  value={(formations ?? []).find(f => f.id === formData.formation_id) ?? null}
+  getOptionLabel={f => f.name}
+  onChange={(_, value) => update('formation_id', value?.id ?? null)}
+  renderInput={(params) => <TextField {...params} label='Formation' />}
+/>
 ```
+
+Also add `formation_id` to `initialFormData`.
 
 No settings page, no routing changes, no realtime sync changes needed.
-
----
-
-### Adding Fields to a Config
-
-The `config.tsx` file controls how fields appear in the table, detail view, and edit form.
-
-#### Editable Field (persisted to DB)
-
-Use `accessorKey` matching the DB column name. Always set `meta.inputType` explicitly — `RecordEdit` uses it to choose the input widget.
-
-```typescript
-{
-  accessorKey: 'duration',
-  header: 'Duration (min)',
-  size: 150,
-  meta: { inputType: 'number' },  // 'boolean' | 'number' | 'date' | 'text' | 'select' | 'relation'
-}
-```
-
-For `'select'`, pass an options map to `RecordEdit` via the `selectOptions` prop (keyed by `accessorKey`). The Autocomplete is populated from there. See [Adding a New Shared Lookup Table](#adding-a-new-shared-lookup-table-fk-on-dance).
-
-Also add the field to `newRecord`:
-
-```typescript
-export const newRecord: DanceInsert = {
-  // existing fields...
-  duration: null,
-};
-```
-
-#### Relation Column (many-to-many, edit via `RelationEditor`)
-
-Use `id` (no `accessorKey`) and set `meta: { inputType: 'relation' }`. In the table and drawer view, the `Cell` renderer handles display. In the edit form, `RecordEdit` looks up the matching editor from the `relationEditors` prop by column id. If no editor is provided for that id, the column is silently skipped.
-
-```typescript
-{
-  id: 'choreographers',
-  header: '🔗 Choreographers',
-  Cell: ({ row }) => <RelationCell ... />,
-  meta: { inputType: 'relation' },
-}
-```
-
-#### Custom Cell Rendering
-
-Any column can override how its value displays in the table with a `Cell` function. This doesn't affect the edit form.
-
-```typescript
-{
-  accessorKey: 'url',
-  header: 'URL',
-  Cell: ({ row }) => row.original.url
-    ? <a href={row.original.url} target='_blank'>{row.original.url}</a>
-    : null,
-}
-```
-
-#### Excluding a Field from the Edit Form
-
-`RecordEdit` skips a column when:
-1. **`meta: { inputType: 'relation' }`** — rendered as a relation editor (from `relationEditors` prop), not a form field
-2. **No `accessorKey`** — columns using `id` only are not included in form submission
-3. **`meta: { readonly: true }`** — visible in table/view but excluded from the edit form:
-
-```typescript
-{
-  accessorKey: 'created_at',
-  header: 'Date Added',
-  meta: { inputType: 'date', readonly: true },
-}
-```
-
-#### Hiding a Column from the Table by Default
-
-Use `columnVisibility` in `tableInitialState`. The user can still toggle it on via column visibility controls.
-
-```typescript
-export const tableInitialState = {
-  columnVisibility: {
-    url: false,
-    created_at: false,
-  },
-  // ...
-};
-```
-
-#### Disabling Sorting
-
-`enableSorting: false` works as expected. Note that `enableColumnFilter` has no effect because MRT's built-in column filters are disabled globally in `useTable.ts` (`enableColumnFilters: false`), so per-column filter settings are never consulted. All filtering goes through the `QueryBuilder`. Similarly, `filterFn` on column definitions has no effect.
-
-```typescript
-{
-  accessorKey: 'video',
-  header: 'Video',
-  enableSorting: false,
-}
-```
 
 ---
 
@@ -768,18 +683,37 @@ export const tableInitialState = {
    };
    ```
 
-4. **Add to `columns`** in `config.tsx`:
+4. **Add a column to `config.tsx`** for the table:
    ```typescript
    {
      accessorKey: 'duration',
      header: 'Duration (min)',
      size: 150,
+     meta: { inputType: 'number' },
    }
    ```
 
-   That's it. `RecordEdit` generates the input automatically. The API layer selects all columns (`select('*')`), so no API changes are needed unless you're adding a relation.
+5. **Add to `DanceView.tsx`** for the detail view:
+   ```typescript
+   <Field label='Duration'>{dance.duration?.toString()}</Field>
+   ```
 
-5. **Add to `queryFields`** if users should filter by it:
+6. **Add to `DanceEdit.tsx`** for the edit form — add the field to `initialFormData`, add a `TextField` in the JSX, and update the `formData` type annotation if needed:
+   ```typescript
+   // In initialFormData:
+   duration: dance?.duration ?? newRecord.duration,
+
+   // In JSX:
+   <TextField
+     label='Duration (min)'
+     type='number'
+     value={formData.duration ?? ''}
+     onChange={e => update('duration', e.target.value ? Number(e.target.value) : null)}
+     fullWidth
+   />
+   ```
+
+7. **Add to `queryFields`** if users should filter by it:
    ```typescript
    { name: 'duration', label: 'Duration', inputType: 'number' },
    ```
@@ -811,10 +745,9 @@ choreographerNames: sortedChoreographers.map(dc => dc.choreographer.name).join('
 | Concern | File |
 |---|---|
 | Routing + providers | `src/App.tsx` |
-| Drawer state | `src/contexts/DrawerContext.tsx` |
 | Page title sync | `src/contexts/TitleContext.tsx` |
 | Undo/redo | `src/contexts/UndoContext.tsx` |
-| Custom types | `src/lib/types/database.ts` |
+| Custom types + MODEL_PATHS | `src/lib/types/database.ts` |
 | Auto-generated types (don't edit) | `src/lib/types/database_generated.ts` |
 | Supabase client | `src/lib/supabase.ts` |
 | TanStack Query client | `src/lib/react-query.ts` |
@@ -824,14 +757,17 @@ choreographerNames: sortedChoreographers.map(dc => dc.choreographer.name).join('
 | Hook: Toast notifications | `src/hooks/useNotify.tsx` |
 | Hook: Realtime sync | `src/hooks/useRealtimeSync.ts` |
 | Generic table page | `src/components/TablePage.tsx` |
-| Drawer router | `src/components/RecordDrawer.tsx` |
-| Generic edit form | `src/components/RecordEdit.tsx` |
-| Generic view display | `src/components/RecordView.tsx` |
 | Relation edit UI | `src/components/RelationEditor.tsx` |
-| Relation display (table cell + drawer view) | `src/components/RelationCell.tsx` |
+| Relation display (table + view) | `src/components/RelationCell.tsx` |
 | Query builder evaluator | `src/components/QueryBuilder/queryEvaluator.ts` |
-| Dance config | `src/components/Dances/config.tsx` |
-| Program config | `src/components/Programs/config.tsx` |
+| Dance routing wrapper | `src/components/Dances/DancePage.tsx` |
+| Dance view mode | `src/components/Dances/DanceView.tsx` |
+| Dance edit/create form | `src/components/Dances/DanceEdit.tsx` |
+| Dance table config | `src/components/Dances/config.tsx` |
+| Program routing wrapper | `src/components/Programs/ProgramPage.tsx` |
+| Program view mode | `src/components/Programs/ProgramView.tsx` |
+| Program edit/create form | `src/components/Programs/ProgramEdit.tsx` |
+| Program table config | `src/components/Programs/config.tsx` |
 | Settings hub | `src/components/Settings/SettingsPage.tsx` |
 | Choreographers list | `src/components/Settings/ChoreographersList.tsx` |
 
@@ -846,10 +782,10 @@ choreographerNames: sortedChoreographers.map(dc => dc.choreographer.name).join('
 - [ ] Read-only query hook created in `src/hooks/use{Model}s.ts` with inlined Supabase function (no mutations)
 - [ ] Select string constant in `src/hooks/useDances.ts` updated to include the FK join
 - [ ] `{model}_id: null` added to `newRecord` in `config.tsx`
-- [ ] Column added to `config.tsx` with `accessorKey`, `Cell` renderer showing `.name`, and `meta: { inputType: 'select' }`
+- [ ] Column added to `config.tsx` for table display (with `Cell` renderer showing `.name`)
 - [ ] Field added to `queryFields` in `config.tsx` using the relation alias name (not the `_id` column name)
-- [ ] Hook imported in `Dance.tsx` and entry added to the `selectOptions` map
-- [ ] `selectOptions` passed to `RecordEdit` in `Dance.tsx`
+- [ ] Field added to `DanceView.tsx`
+- [ ] `Autocomplete` added to `DanceEdit.tsx` (hook imported, `initialFormData` updated, JSX added)
 
 ## Checklist: New Auxiliary Table (Settings List)
 
@@ -863,28 +799,30 @@ choreographerNames: sortedChoreographers.map(dc => dc.choreographer.name).join('
 - [ ] Entry added to `SETTINGS_ITEMS` in `src/components/Settings/SettingsPage.tsx`
 - [ ] Route added in `src/App.tsx` under `/settings/{model}s`
 
-**If surfacing in dances (table column + drawer):**
+**If surfacing in dances (table column + detail view):**
 - [ ] Junction array added to `Dance` type in `src/lib/types/database.ts`
 - [ ] Select string in `src/hooks/useDances.ts` updated to eager-load relation
 - [ ] Mutation hooks created in `src/hooks/useDances{Model}s.ts` with inlined Supabase add/remove functions
 - [ ] `buildRelationsColumns` in `src/hooks/useDances.ts` updated with computed name string (if filtering needed) — name must match the `queryFields` entry below
-- [ ] Column added to `src/components/Dances/config.tsx` with `Cell` renderer and `meta: { inputType: 'relation' }`. For auxiliary-table relations, use a plain text join (e.g. `.map(dc => dc.name).join(', ')`), not `RelationCell`.
-- [ ] `RelationEditor` added to `relationEditors` prop in `Dance.tsx` (keyed by column id; view mode is automatic)
+- [ ] Column added to `src/components/Dances/config.tsx` with plain text join `Cell` and `meta: { inputType: 'relation' }`
+- [ ] Field display added to `DanceView.tsx`
+- [ ] `usePendingRelations`, mutation hooks, and `RelationEditor` added to `DanceEdit.tsx`; `hasPendingChanges` and undo ops updated
 - [ ] Computed field added to `queryFields` in `config.tsx` (if filtering needed)
 
-## Checklist: New Primary Model (Full Table + Drawer)
+## Checklist: New Primary Model (Full Table + Detail Pages)
 
 - [ ] Supabase migration created and applied
 - [ ] `supabase gen types typescript --local > src/lib/types/database_generated.ts`
-- [ ] `Model` union updated in `src/lib/types/database.ts`
+- [ ] `DrawerModel` and `MODEL_PATHS` updated in `src/lib/types/database.ts` (if `RelationCell` links needed)
 - [ ] Custom types (`*Row`, `*`, `*Insert`, `*Update`) added to `database.ts`
-- [ ] TanStack Query hooks created in `src/hooks/use{Model}s.ts` with inlined Supabase functions
+- [ ] TanStack Query hooks created in `src/hooks/use{Model}s.ts` with inlined Supabase functions (list + single-record + mutations)
 - [ ] `config.tsx` created with `newRecord`, `columns`, `tableInitialState`, `queryFields`, `defaultQuery`
-- [ ] Detail component (`{Model}.tsx`) created
-- [ ] Table component (`{Model}s.tsx`) created
-- [ ] `index.ts` created
-- [ ] Model added to `DETAIL_COMPONENTS` in `src/components/RecordDrawer.tsx`
-- [ ] Route added in `src/App.tsx`
+- [ ] `{Model}Page.tsx` created (routing wrapper + view/edit toggle)
+- [ ] `{Model}View.tsx` created (explicit JSX view, delete flow, undo op)
+- [ ] `{Model}Edit.tsx` created (explicit form, `useBlocker` + `beforeunload`, `flushSync` + `isSaved` pattern)
+- [ ] `{Model}s.tsx` table component created
+- [ ] `index.ts` created exporting `{Model}Page` and `{Model}s`
+- [ ] Routes added in `src/App.tsx`: `/{model}s` and `/{model}s/:id`
 - [ ] Nav link added in `src/components/layouts/NavBar.tsx`
 
 ## Checklist: New Relation
@@ -895,7 +833,8 @@ choreographerNames: sortedChoreographers.map(dc => dc.choreographer.name).join('
 - [ ] `.select()` strings updated in both entity API files
 - [ ] Mutation hooks created for add/remove in `src/hooks/use{Model}s{Entity}s.ts` with inlined Supabase functions
 - [ ] Hook `select` transform updated with computed name string (if filtering by name is needed) — name must match the `queryFields` entry below
-- [ ] Column added to `config.tsx` with `Cell` renderer and `meta: { inputType: 'relation' }` (view display is automatic via `RecordView`). Use `RelationCell` for primary-model relations (entities in `DETAIL_COMPONENTS`); use a plain text join for auxiliary-table relations.
-- [ ] `RelationEditor` added to `relationEditors` prop in detail component (keyed by column id)
+- [ ] Column added to `config.tsx` for table display (`RelationCell` for primary-model relations; plain text join for auxiliary-table relations)
+- [ ] Field added to `*View.tsx` for detail view display
+- [ ] `usePendingRelations`, mutation hooks, and `RelationEditor` (or custom editor) added to `*Edit.tsx`; `hasPendingChanges` and undo ops updated
 - [ ] `queryFields` updated with computed name field (if applicable)
 - [ ] Query invalidations in mutation hooks cover all affected query keys
