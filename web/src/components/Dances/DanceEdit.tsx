@@ -1,13 +1,14 @@
 import { useState, useMemo, useEffect } from 'react';
 import { flushSync } from 'react-dom';
 import { useNavigate, useBlocker } from 'react-router';
-import { Box, Button, Tabs, Tab, TextField, Checkbox, FormControlLabel, Typography, Autocomplete, Divider, Stack, Tooltip } from '@mui/material';
+import { Box, Button, TextField, Checkbox, FormControlLabel, Typography, Autocomplete, Divider, Stack } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { useConfirm } from 'material-ui-confirm';
 import { RelationEditor } from '@/components/RelationEditor';
 import { FiguresEditor } from './FiguresEditor';
 import { newRecord } from './config';
-import { useCreateDance, useUpdateDance } from '@/hooks/useDances';
+import { useCreateDance, useUpdateDance, useDeleteDance } from '@/hooks/useDances';
 import { useAddChoreographerToDance, useRemoveChoreographerFromDance } from '@/hooks/useDancesChoreographers';
 import { useAddKeyMoveToDance, useRemoveKeyMoveFromDance } from '@/hooks/useDancesKeyMoves';
 import { useAddVibeToDance, useRemoveVibeFromDance } from '@/hooks/useDancesVibes';
@@ -40,6 +41,7 @@ export const DanceEditMode = ({ dance, onCancel }: { dance?: Dance; onCancel?: (
 
   const { mutateAsync: createDance, isPending: isCreating } = useCreateDance();
   const { mutateAsync: updateDance, isPending: isUpdating } = useUpdateDance();
+  const { mutateAsync: deleteDance } = useDeleteDance();
   const { mutateAsync: addChoreographer } = useAddChoreographerToDance();
   const { mutateAsync: removeChoreographer } = useRemoveChoreographerFromDance();
   const { mutateAsync: addKeyMove } = useAddKeyMoveToDance();
@@ -73,7 +75,6 @@ export const DanceEditMode = ({ dance, onCancel }: { dance?: Dance; onCancel?: (
     moves: dance?.moves ?? newRecord.moves,
   }));
   const [formData, setFormData] = useState<DanceUpdate>({ ...initialFormData });
-  const [tab, setTab] = useState(0);
   const [isSaved, setIsSaved] = useState(false);
 
   const isSaving = isCreating || isUpdating;
@@ -139,6 +140,37 @@ export const DanceEditMode = ({ dance, onCancel }: { dance?: Dance; onCancel?: (
   };
 
 
+  // ---------- Delete ----------
+
+  const handleDelete = async () => {
+    const { confirmed } = await confirm({
+      title: 'Delete Dance',
+      description: `Are you sure you want to delete "${dance!.title}"?`,
+      confirmationText: 'Delete',
+      cancellationText: 'Cancel',
+    });
+    if (!confirmed) return;
+    await deleteDance({ id: dance!.id });
+    pushAction({
+      label: `Delete Dance: ${dance!.title}`,
+      ops: [
+        { type: 'delete', table: 'dances', id: dance!.id, record: dbRecord(dance!, newRecord) },
+        ...relationOps('dances_choreographers', [],
+          dance!.dances_choreographers.map(dc => ({ id: dc.id, dance_id: dance!.id, choreographer_id: dc.choreographer.id }))),
+        ...relationOps('dances_key_moves', [],
+          dance!.dances_key_moves.map(dkm => ({ id: dkm.id, dance_id: dance!.id, key_move_id: dkm.key_move.id }))),
+        ...relationOps('dances_vibes', [],
+          dance!.dances_vibes.map(dv => ({ id: dv.id, dance_id: dance!.id, vibe_id: dv.vibe.id }))),
+        ...relationOps('programs_dances', [],
+          dance!.programs_dances.map(pd => ({ id: pd.id, dance_id: dance!.id, program_id: pd.program.id, order: pd.order }))),
+      ],
+    });
+    toastSuccess('Dance deleted');
+    flushSync(() => setIsSaved(true));
+    navigate('/dances');
+  };
+
+
   // ---------- Form handling ----------
 
   const update = (key: keyof DanceUpdate, value: unknown) =>
@@ -197,71 +229,20 @@ export const DanceEditMode = ({ dance, onCancel }: { dance?: Dance; onCancel?: (
   };
 
   return (
-    <Box sx={{ maxWidth: 800 }}>
-      <Typography variant='h5' sx={{ mb: 2 }}>
+    <Box sx={{ maxWidth: 1100, mx: 'auto' }}>
+      <Typography variant='h5' sx={{ mb: 2.5 }}>
         {isCreate ? 'New Dance' : `Edit: ${dance!.title}`}
       </Typography>
 
-      <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
-        <Tab label='Details' />
-        <Tab label='Figures' />
-      </Tabs>
-
-      {tab === 0 && (
-        <Stack spacing={2}>
-          <TextField label='Title' value={formData.title ?? ''} onChange={e => update('title', e.target.value)} fullWidth />
-          <TextField label='URL' value={formData.url ?? ''} onChange={e => update('url', e.target.value)} fullWidth />
-          <TextField label='Video' value={formData.video ?? ''} onChange={e => update('video', e.target.value)} fullWidth />
-
-          <Autocomplete
-            options={danceTypes ?? []}
-            value={(danceTypes ?? []).find(dt => dt.id === formData.dance_type_id) ?? null}
-            getOptionLabel={dt => dt.name}
-            onChange={(_, value) => update('dance_type_id', value?.id ?? null)}
-            renderInput={(params) => <TextField {...params} label='Dance Type' />}
-          />
-          <Autocomplete
-            options={formations ?? []}
-            value={(formations ?? []).find(f => f.id === formData.formation_id) ?? null}
-            getOptionLabel={f => f.name}
-            onChange={(_, value) => update('formation_id', value?.id ?? null)}
-            renderInput={(params) => <TextField {...params} label='Formation' />}
-          />
-          <Autocomplete
-            options={progressions ?? []}
-            value={(progressions ?? []).find(p => p.id === formData.progression_id) ?? null}
-            getOptionLabel={p => p.name}
-            onChange={(_, value) => update('progression_id', value?.id ?? null)}
-            renderInput={(params) => <TextField {...params} label='Progression' />}
-          />
-
-          <TextField
-            label='Difficulty'
-            type='number'
-            value={formData.difficulty ?? ''}
-            onChange={e => update('difficulty', e.target.value ? Number(e.target.value) : null)}
-            fullWidth
-          />
-          <Tooltip title='Leave unchecked if unknown' placement='right'>
-            <FormControlLabel
-              label='16-beat swing?'
-              control={
-                <Checkbox
-                  checked={Boolean(formData.swing_16)}
-                  onChange={e => update('swing_16', e.target.checked)}
-                />
-              }
-            />
-          </Tooltip>
-
-          <TextField label='Notes' value={formData.notes ?? ''} onChange={e => update('notes', e.target.value)} fullWidth multiline minRows={2} />
-          <TextField label='Place in Program' value={formData.place_in_program ?? ''} onChange={e => update('place_in_program', e.target.value)} fullWidth multiline minRows={2} />
-          <TextField label='Moves' value={formData.moves ?? ''} onChange={e => update('moves', e.target.value)} fullWidth multiline minRows={2} />
-
-          <Divider />
-
+      {/* Prominent header fields — full width */}
+      <Stack spacing={2} sx={{ mb: 2.5 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+          <TextField label='Title' value={formData.title ?? ''} onChange={e => update('title', e.target.value)} fullWidth variant='standard' />
+          <TextField label='URL' value={formData.url ?? ''} onChange={e => update('url', e.target.value)} fullWidth variant='standard' />
+        </Box>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, gap: 3 }}>
           <RelationEditor
-            model='choreographer' label='Choreographers'
+            model='choreographer' label='Choreographer'
             relations={dance?.dances_choreographers ?? []}
             getRelationId={dc => dc.choreographer.id}
             getRelationLabel={dc => dc.choreographer.name}
@@ -271,7 +252,7 @@ export const DanceEditMode = ({ dance, onCancel }: { dance?: Dance; onCancel?: (
             pending={pendingChoreographers}
           />
           <RelationEditor
-            model='key_move' label='Key Moves'
+            model='key_move' label='Key Move'
             relations={dance?.dances_key_moves ?? []}
             getRelationId={dkm => dkm.key_move.id}
             getRelationLabel={dkm => dkm.key_move.name}
@@ -281,7 +262,7 @@ export const DanceEditMode = ({ dance, onCancel }: { dance?: Dance; onCancel?: (
             pending={pendingKeyMoves}
           />
           <RelationEditor
-            model='vibe' label='Vibes'
+            model='vibe' label='Vibe'
             relations={dance?.dances_vibes ?? []}
             getRelationId={dv => dv.vibe.id}
             getRelationLabel={dv => dv.vibe.name}
@@ -290,23 +271,99 @@ export const DanceEditMode = ({ dance, onCancel }: { dance?: Dance; onCancel?: (
             getOptionLabel={v => v.name}
             pending={pendingVibes}
           />
-        </Stack>
-      )}
+        </Box>
+      </Stack>
 
-      {tab === 1 && (
-        <FiguresEditor
-          figures={pendingFigures.figures}
-          onAdd={pendingFigures.addFigure}
-          onUpdate={pendingFigures.updateFigure}
-          onDelete={pendingFigures.deleteFigure}
-        />
-      )}
+      <Divider sx={{ mb: 2.5 }} />
 
-      <Box sx={{ display: 'flex', gap: 2, mt: 3, justifyContent: 'flex-end' }}>
-        <Button onClick={handleCancel} disabled={isSaving}>Cancel</Button>
-        <Button variant='contained' startIcon={<SaveIcon />} onClick={handleSave} disabled={isSaving}>
-          {isSaving ? 'Saving…' : isCreate ? 'Create' : 'Save'}
-        </Button>
+      {/* Two-column body */}
+      <Box sx={{ display: 'flex', gap: 5, alignItems: 'flex-start', flexDirection: { xs: 'column', md: 'row' } }}>
+
+        {/* Left: Figures + Notes */}
+        <Box sx={{ flex: '1 1 0', minWidth: 0 }}>
+          <FiguresEditor
+            figures={pendingFigures.figures}
+            onAdd={pendingFigures.addFigure}
+            onUpdate={pendingFigures.updateFigure}
+            onDelete={pendingFigures.deleteFigure}
+          />
+          <TextField
+            label='Notes'
+            value={formData.notes ?? ''}
+            onChange={e => update('notes', e.target.value)}
+            fullWidth multiline variant='standard'
+            sx={{ mt: 4 }}
+          />
+        </Box>
+
+        {/* Right: Attributes */}
+        <Box sx={{ flexShrink: 0, width: { xs: '100%', md: 320 } }}>
+          <Stack spacing={2}>
+            <Autocomplete
+              options={danceTypes ?? []}
+              value={(danceTypes ?? []).find(dt => dt.id === formData.dance_type_id) ?? null}
+              getOptionLabel={dt => dt.name}
+              onChange={(_, value) => update('dance_type_id', value?.id ?? null)}
+              renderInput={(params) => <TextField {...params} label='Dance Type' variant='standard' />}
+            />
+            <Autocomplete
+              options={formations ?? []}
+              value={(formations ?? []).find(f => f.id === formData.formation_id) ?? null}
+              getOptionLabel={f => f.name}
+              onChange={(_, value) => update('formation_id', value?.id ?? null)}
+              renderInput={(params) => <TextField {...params} label='Formation' variant='standard' />}
+            />
+            <Autocomplete
+              options={progressions ?? []}
+              value={(progressions ?? []).find(p => p.id === formData.progression_id) ?? null}
+              getOptionLabel={p => p.name}
+              onChange={(_, value) => update('progression_id', value?.id ?? null)}
+              renderInput={(params) => <TextField {...params} label='Progression' variant='standard' />}
+            />
+
+            <Divider />
+
+            <TextField
+              label='Difficulty'
+              type='number'
+              value={formData.difficulty ?? ''}
+              onChange={e => update('difficulty', e.target.value ? Number(e.target.value) : null)}
+              variant='standard'
+              sx={{ width: 100 }}
+            />
+            <FormControlLabel
+              label='16-beat swing?'
+              control={
+                <Checkbox
+                  checked={Boolean(formData.swing_16)}
+                  onChange={e => update('swing_16', e.target.checked)}
+                  sx={{ pl: 0 }}
+                />
+              }
+            />
+
+            <TextField label='Place in Program' value={formData.place_in_program ?? ''} onChange={e => update('place_in_program', e.target.value)} fullWidth multiline variant='standard' />
+            <TextField label='Moves' value={formData.moves ?? ''} onChange={e => update('moves', e.target.value)} fullWidth multiline variant='standard' />
+            <TextField label='Video' value={formData.video ?? ''} onChange={e => update('video', e.target.value)} fullWidth variant='standard' />
+          </Stack>
+        </Box>
+
+      </Box>
+
+      <Box sx={{ display: 'flex', mt: 3, justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box>
+          {!isCreate && (
+            <Button color='error' startIcon={<DeleteIcon />} onClick={handleDelete} disabled={isSaving}>
+              Delete
+            </Button>
+          )}
+        </Box>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button onClick={handleCancel} disabled={isSaving} color='warning'>Cancel</Button>
+          <Button variant='contained' startIcon={<SaveIcon />} onClick={handleSave} disabled={isSaving} color='success'>
+            {isSaving ? 'Saving…' : isCreate ? 'Create' : 'Save'}
+          </Button>
+        </Box>
       </Box>
     </Box>
   );

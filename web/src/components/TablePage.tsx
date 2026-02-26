@@ -68,7 +68,7 @@ export const TablePage = <TData extends MRT_RowData & { id: number }>({ model, u
 
       <Tooltip title={`Add ${model}`} placement='left'>
         <Fab
-          color='primary'
+          color='secondary'
           onClick={() => navigate(`${basePath}/new`)}
           sx={{ position: 'fixed', bottom: 32, right: 32 }}
         >

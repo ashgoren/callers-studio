@@ -3,10 +3,11 @@ import { flushSync } from 'react-dom';
 import { useNavigate, useBlocker } from 'react-router';
 import { Box, Button, Stack, TextField, Typography } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { useConfirm } from 'material-ui-confirm';
 import { ProgramDancesEditor } from './ProgramDancesEditor';
 import { newRecord } from './config';
-import { useCreateProgram, useUpdateProgram } from '@/hooks/usePrograms';
+import { useCreateProgram, useUpdateProgram, useDeleteProgram } from '@/hooks/usePrograms';
 import { useAddDanceToProgram, useRemoveDanceFromProgram } from '@/hooks/useProgramsDances';
 import { useDances } from '@/hooks/useDances';
 import { usePendingRelations } from '@/hooks/usePendingRelations';
@@ -32,6 +33,7 @@ export const ProgramEditMode = ({ program, onCancel }: { program?: Program; onCa
 
   const { mutateAsync: createProgram, isPending: isCreating } = useCreateProgram();
   const { mutateAsync: updateProgram, isPending: isUpdating } = useUpdateProgram();
+  const { mutateAsync: deleteProgram } = useDeleteProgram();
   const { mutateAsync: addDance } = useAddDanceToProgram();
   const { mutateAsync: removeDance } = useRemoveDanceFromProgram();
 
@@ -53,7 +55,6 @@ export const ProgramEditMode = ({ program, onCancel }: { program?: Program; onCa
 
   // ---------- Unsaved changes handling ----------
 
-  // Has any form field changed?
   const isDirty = useMemo(() =>
     Object.keys(formData).some(key =>
       (formData as Record<string, unknown>)[key] !== (initialFormData as Record<string, unknown>)[key]
@@ -61,10 +62,8 @@ export const ProgramEditMode = ({ program, onCancel }: { program?: Program; onCa
     [formData, initialFormData]
   );
 
-  // Any pending changes to relations?
   const hasPendingChanges = pendingDances.hasPendingChanges;
 
-  // Warn on in-app navigation
   const blocker = useBlocker(!isSaved && (isDirty || hasPendingChanges));
   useEffect(() => {
     if (blocker.state !== 'blocked') return;
@@ -79,7 +78,6 @@ export const ProgramEditMode = ({ program, onCancel }: { program?: Program; onCa
     }).catch(() => blocker.reset());
   }, [blocker.state]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Warn on tab close / browser refresh
   useEffect(() => {
     if (!(isDirty || hasPendingChanges)) return;
     const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); };
@@ -87,7 +85,6 @@ export const ProgramEditMode = ({ program, onCancel }: { program?: Program; onCa
     return () => window.removeEventListener('beforeunload', handler);
   }, [isDirty, hasPendingChanges]);
 
-  // Warn on switch back to view mode
   const handleCancel = async () => {
     if (isDirty || hasPendingChanges) {
       const { confirmed } = await confirm({
@@ -99,11 +96,36 @@ export const ProgramEditMode = ({ program, onCancel }: { program?: Program; onCa
       if (!confirmed) return;
     }
     if (isCreate) {
-      flushSync(() => setIsSaved(true)); // Synchronously set to disable blocker before navigating away
+      flushSync(() => setIsSaved(true));
       navigate('/programs');
     } else {
-      onCancel?.(); // Go back to view mode
+      onCancel?.();
     }
+  };
+
+
+  // ---------- Delete ----------
+
+  const handleDelete = async () => {
+    const { confirmed } = await confirm({
+      title: 'Delete Program',
+      description: `Are you sure you want to delete "${formatDate(program!)}"?`,
+      confirmationText: 'Delete',
+      cancellationText: 'Cancel',
+    });
+    if (!confirmed) return;
+    await deleteProgram({ id: program!.id });
+    pushAction({
+      label: `Delete Program: ${formatDate(program!)}`,
+      ops: [
+        { type: 'delete', table: 'programs', id: program!.id, record: dbRecord(program!, newRecord) },
+        ...relationOps('programs_dances', [],
+          program!.programs_dances.map(pd => ({ id: pd.id, program_id: program!.id, dance_id: pd.dance.id, order: pd.order }))),
+      ],
+    });
+    toastSuccess('Program deleted');
+    flushSync(() => setIsSaved(true));
+    navigate('/programs');
   };
 
 
@@ -131,7 +153,7 @@ export const ProgramEditMode = ({ program, onCancel }: { program?: Program; onCa
         ],
       });
       toastSuccess('Program created');
-      flushSync(() => setIsSaved(true)); // Synchronously set to disable blocker before navigating away
+      flushSync(() => setIsSaved(true));
       navigate(`/programs/${programId}`);
     } else {
       pushAction({
@@ -146,31 +168,33 @@ export const ProgramEditMode = ({ program, onCancel }: { program?: Program; onCa
         ],
       });
       toastSuccess('Program updated');
-      onCancel?.(); // Go back to view mode
+      onCancel?.();
     }
   };
 
   return (
-    <Box sx={{ maxWidth: 800 }}>
+    <Box sx={{ maxWidth: 900, mx: 'auto' }}>
       <Typography variant='h5' sx={{ mb: 2 }}>
         {isCreate ? 'New Program' : `Edit: ${formatDate(program!)}`}
       </Typography>
 
-      <Stack spacing={2}>
-        <TextField
-          label='Date'
-          type='date'
-          value={formData.date ?? ''}
-          onChange={e => update('date', e.target.value || null)}
-          fullWidth
-          slotProps={{ inputLabel: { shrink: true } }}
-        />
-        <TextField
-          label='Location'
-          value={formData.location ?? ''}
-          onChange={e => update('location', e.target.value)}
-          fullWidth
-        />
+      <Stack spacing={2.5}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+          <TextField
+            label='Date'
+            type='date'
+            value={formData.date ?? ''}
+            onChange={e => update('date', e.target.value || null)}
+            fullWidth
+            slotProps={{ inputLabel: { shrink: true } }}
+          />
+          <TextField
+            label='Location'
+            value={formData.location ?? ''}
+            onChange={e => update('location', e.target.value)}
+            fullWidth
+          />
+        </Box>
 
         <ProgramDancesEditor
           programDances={program?.programs_dances ?? []}
@@ -179,11 +203,20 @@ export const ProgramEditMode = ({ program, onCancel }: { program?: Program; onCa
         />
       </Stack>
 
-      <Box sx={{ display: 'flex', gap: 2, mt: 3, justifyContent: 'flex-end' }}>
-        <Button onClick={handleCancel} disabled={isSaving}>Cancel</Button>
-        <Button variant='contained' startIcon={<SaveIcon />} onClick={handleSave} disabled={isSaving}>
-          {isSaving ? 'Saving…' : isCreate ? 'Create' : 'Save'}
-        </Button>
+      <Box sx={{ display: 'flex', mt: 3, justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box>
+          {!isCreate && (
+            <Button color='error' startIcon={<DeleteIcon />} onClick={handleDelete} disabled={isSaving}>
+              Delete
+            </Button>
+          )}
+        </Box>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button onClick={handleCancel} disabled={isSaving}>Cancel</Button>
+          <Button variant='contained' startIcon={<SaveIcon />} onClick={handleSave} disabled={isSaving}>
+            {isSaving ? 'Saving…' : isCreate ? 'Create' : 'Save'}
+          </Button>
+        </Box>
       </Box>
     </Box>
   );

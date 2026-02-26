@@ -1,120 +1,199 @@
 import { useEffect, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
-import { Box, Button, Divider, Stack, Typography } from '@mui/material';
+import { Box, Button, Divider, IconButton, Stack, Tooltip, Typography } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { useConfirm } from 'material-ui-confirm';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { ExternalLink } from '@/components/shared';
 import { RelationCell } from '@/components/RelationCell';
-import { newRecord } from './config';
-import { useDeleteDance } from '@/hooks/useDances';
-import { useNotify } from '@/hooks/useNotify';
 import { useTitle } from '@/contexts/TitleContext';
-import { useUndoActions, dbRecord, relationOps } from '@/contexts/UndoContext';
 import type { Dance } from '@/lib/types/database';
 
 export const DanceViewMode = ({ dance, onEdit }: { dance: Dance; onEdit: () => void }) => {
   const navigate = useNavigate();
-  const confirm = useConfirm();
-  const { toastSuccess } = useNotify();
-  const { pushAction } = useUndoActions();
-  const { mutateAsync: deleteDance } = useDeleteDance();
   const { setTitle } = useTitle();
 
   useEffect(() => setTitle(`Dance: ${dance.title}`), [setTitle, dance.title]);
 
-  const handleDelete = async () => {
-    const { confirmed } = await confirm({
-      title: 'Delete Dance',
-      description: `Are you sure you want to delete "${dance.title}"?`,
-      confirmationText: 'Delete',
-      cancellationText: 'Cancel',
-    });
-    if (!confirmed) return;
-    await deleteDance({ id: dance.id });
-    pushAction({
-      label: `Delete Dance: ${dance.title}`,
-      ops: [
-        { type: 'delete', table: 'dances', id: dance.id, record: dbRecord(dance, newRecord) },
-        ...relationOps('dances_choreographers', [],
-          dance.dances_choreographers.map(dc => ({ id: dc.id, dance_id: dance.id, choreographer_id: dc.choreographer.id }))),
-        ...relationOps('dances_key_moves', [],
-          dance.dances_key_moves.map(dkm => ({ id: dkm.id, dance_id: dance.id, key_move_id: dkm.key_move.id }))),
-        ...relationOps('dances_vibes', [],
-          dance.dances_vibes.map(dv => ({ id: dv.id, dance_id: dance.id, vibe_id: dv.vibe.id }))),
-        ...relationOps('programs_dances', [],
-          dance.programs_dances.map(pd => ({ id: pd.id, dance_id: dance.id, program_id: pd.program.id, order: pd.order }))),
-      ],
-    });
-    toastSuccess('Dance deleted');
-    navigate('/dances');
-  };
+  const choreographerNames = dance.dances_choreographers.map(dc => dc.choreographer.name).join(', ');
+
+  // Label shown above figures: "Dance Type · Formation · Progression"
+  // Skips display of defaults ("contra" / "single progression")
+  const figuresLabel = [
+    dance.dance_type?.name?.toLowerCase() !== 'contra' ? dance.dance_type?.name : null,
+    dance.formation?.name,
+    dance.progression?.name?.toLowerCase() !== 'single' ? `${dance.progression?.name} progression` : null,
+  ].filter(Boolean).join(' · ');
 
   return (
-    <Box sx={{ maxWidth: 800 }}>
-      <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/dances')} size='small' sx={{ mb: 1 }}>
-        Dances
-      </Button>
+    <Box sx={{ maxWidth: 900, mx: 'auto' }}>
 
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-        <Typography variant='h5'>{dance.title}</Typography>
-        <Box sx={{ display: 'flex', gap: 1, flexShrink: 0, ml: 2 }}>
-          <Button variant='contained' color='warning' startIcon={<EditIcon />} onClick={onEdit}>Edit</Button>
-          <Button variant='contained' color='error' startIcon={<DeleteIcon />} onClick={handleDelete}>Delete</Button>
-        </Box>
+      {/* Nav + actions */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+        <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/dances')} size='small' color='secondary'>
+          Dances
+        </Button>
+        <Tooltip title='Edit'>
+          <IconButton onClick={onEdit} size='small'><EditIcon fontSize='small' /></IconButton>
+        </Tooltip>
       </Box>
 
-      <Divider sx={{ mb: 2 }} />
-
-      <Stack spacing={1.5}>
-        <Field label='Choreographers'>{dance.dances_choreographers.map(dc => dc.choreographer.name).join(', ')}</Field>
-        <Field label='Dance Type'>{dance.dance_type?.name}</Field>
-        <Field label='Formation'>{dance.formation?.name}</Field>
-        <Field label='Progression'>{dance.progression?.name}</Field>
-        <Field label='Difficulty'>{dance.difficulty?.toString()}</Field>
-        <Field label='16-beat swing?'>
-          {dance.swing_16 === true ? 'Yes' : dance.swing_16 === false ? 'No' : undefined}
-        </Field>
-        <Field label='Key Moves'>{dance.dances_key_moves.map(dkm => dkm.key_move.name).join(', ')}</Field>
-        <Field label='Vibes'>{dance.dances_vibes.map(dv => dv.vibe.name).join(', ')}</Field>
-        <Field label='URL'>{dance.url ? <ExternalLink url={dance.url} title={dance.url} /> : undefined}</Field>
-        <Field label='Video'>{dance.video ? <ExternalLink url={dance.video} title='Video' /> : undefined}</Field>
-        <Field label='Notes'>{dance.notes}</Field>
-        <Field label='Place in Program'>{dance.place_in_program}</Field>
-        <Field label='Moves'>{dance.moves}</Field>
-        <Field label='Programs'>
-          <RelationCell
-            items={dance.programs_dances}
-            model='program'
-            getId={pd => pd.program.id}
-            getLabel={pd => `${pd.program.date} – ${pd.program.location}`}
-          />
-        </Field>
-        {dance.figures.length > 0 && (
-          <Box>
-            <Typography variant='caption' color='text.secondary'>Figures</Typography>
-            <Stack spacing={0.5} sx={{ mt: 0.5 }}>
-              {dance.figures.map((figure, i) => (
-                <Box key={i} sx={{ display: 'flex', gap: 2 }}>
-                  <Typography sx={{ width: 28, flexShrink: 0 }}>{figure.phrase}</Typography>
-                  <Typography sx={{ width: 24, flexShrink: 0 }}>{figure.beats ?? ''}</Typography>
-                  <Typography>{figure.description}</Typography>
-                </Box>
-              ))}
-            </Stack>
-          </Box>
+      {/* Title + choreographers */}
+      <Box sx={{ mb: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Typography variant='h4' component='h1' sx={{ fontWeight: 600, lineHeight: 1.2 }}>
+            {dance.title}
+          </Typography>
+          {dance.url && (
+            <IconButton
+              component='a'
+              href={dance.url}
+              target='_blank'
+              rel='noopener noreferrer'
+              size='small'
+              sx={{ color: 'text.secondary', alignSelf: 'flex-end', mb: '4px' }}
+            >
+              <OpenInNewIcon sx={{ fontSize: '1rem' }} />
+            </IconButton>
+          )}
+        </Box>
+        {choreographerNames && (
+          <Typography variant='subtitle1' color='text.secondary' sx={{ mt: 0.5 }}>
+            by {choreographerNames}
+          </Typography>
         )}
-        <Field label='Date Added'>{new Date(dance.created_at).toISOString().split('T')[0]}</Field>
-      </Stack>
+      </Box>
+
+      <Divider sx={{ mb: 3 }} />
+
+      {/* Two-column body */}
+      <Box sx={{ display: 'flex', gap: 5, alignItems: 'flex-start', flexDirection: { xs: 'column', md: 'row' } }}>
+
+        {/* Left: Figures + Notes */}
+        <Box sx={{ flex: '1 1 0', minWidth: 0 }}>
+          {figuresLabel && (
+            <Typography variant='overline' color='text.secondary'>{figuresLabel}</Typography>
+          )}
+          {dance.figures.length === 0 ? (
+            <Typography color='text.disabled' sx={{ mt: 0.5 }}>—</Typography>
+          ) : (
+            <Box sx={{ mt: figuresLabel ? 1 : 0 }}>
+              {dance.figures.map((figure, i) => {
+                const isNewPhrase = i === 0 || figure.phrase !== dance.figures[i - 1].phrase;
+                return (
+                  <Box key={i} sx={{ display: 'flex', gap: 2, mt: isNewPhrase && i > 0 ? 2 : 0.5 }}>
+                    <Typography sx={{
+                      width: 28, flexShrink: 0,
+                      fontWeight: 700, fontSize: '0.8rem',
+                      color: isNewPhrase ? 'text.secondary' : 'transparent',
+                      pt: '3px',
+                      userSelect: 'none',
+                    }}>
+                      {isNewPhrase ? figure.phrase : ''}
+                    </Typography>
+                    <Typography sx={{ width: 30, flexShrink: 0, color: 'text.disabled', fontSize: '0.875rem' }}>
+                      {figure.beats != null ? `(${figure.beats})` : ''}
+                    </Typography>
+                    <Typography>{figure.description}</Typography>
+                  </Box>
+                );
+              })}
+            </Box>
+          )}
+
+          {dance.notes && (
+            <Box sx={{ mt: 3 }}>
+              <Typography
+                variant='caption'
+                color='text.secondary'
+                sx={{ fontWeight: 600, textTransform: 'uppercase', fontSize: '0.68rem', letterSpacing: 0.5 }}
+              >
+                Notes
+              </Typography>
+              <Typography variant='body1' sx={{ mt: 0.25, whiteSpace: 'pre-wrap' }}>
+                {dance.notes}
+              </Typography>
+            </Box>
+          )}
+
+          {dance.programs_dances.length > 0 && (
+            <Box sx={{ mt: 3 }}>
+              <Typography
+                variant='caption'
+                color='text.secondary'
+                sx={{ fontWeight: 600, textTransform: 'uppercase', fontSize: '0.68rem', letterSpacing: 0.5 }}
+              >
+                Programs
+              </Typography>
+              <Box sx={{ mt: 0.25 }}>
+                <RelationCell
+                  items={dance.programs_dances}
+                  model='program'
+                  getId={pd => pd.program.id}
+                  getLabel={pd => `${pd.program.date} – ${pd.program.location}`}
+                />
+              </Box>
+            </Box>
+          )}
+        </Box>
+
+        {/* Right: Metadata sidebar */}
+        <Box sx={{ flexShrink: 0, width: { xs: '100%', md: 280 } }}>
+
+          <Stack spacing={1.5}>
+            <SidebarField label='Key Move'>
+              {dance.dances_key_moves.length > 0
+                ? dance.dances_key_moves.map(dkm => dkm.key_move.name).join(', ')
+                : undefined}
+            </SidebarField>
+            <SidebarField label='Vibe'>
+              {dance.dances_vibes.length > 0
+                ? dance.dances_vibes.map(dv => dv.vibe.name).join(', ')
+                : undefined}
+            </SidebarField>
+          </Stack>
+
+          <Divider sx={{ my: 2 }} />
+
+          <Stack spacing={1.5}>
+            <SidebarField label='Difficulty'>
+              {dance.difficulty != null ? String(dance.difficulty) : undefined}
+            </SidebarField>
+            <SidebarField label='16-beat swing?'>
+              {dance.swing_16 === true ? 'Yes' : dance.swing_16 === false ? 'No' : undefined}
+            </SidebarField>
+            <SidebarField label='Place in Program'>{dance.place_in_program || undefined}</SidebarField>
+            <SidebarField label='Moves'>{dance.moves || undefined}</SidebarField>
+            <SidebarField label='Video'>
+              {dance.video ? <ExternalLink url={dance.video} title='Video' /> : undefined}
+            </SidebarField>
+          </Stack>
+
+          <Divider sx={{ my: 2 }} />
+
+          <Stack spacing={1.5}>
+            <SidebarField label='Date Added'>
+              {new Date(dance.created_at).toISOString().split('T')[0]}
+            </SidebarField>
+          </Stack>
+
+        </Box>
+
+      </Box>
     </Box>
   );
 };
 
-const Field = ({ label, children }: { label: string; children?: ReactNode }) => (
+const SidebarField = ({ label, children }: { label: string; children?: ReactNode }) => (
   <Box>
-    <Typography variant='caption' color='text.secondary'>{label}</Typography>
-    <Typography variant='body1' component='div'>
+    <Typography
+      variant='caption'
+      color='text.secondary'
+      sx={{ fontWeight: 600, textTransform: 'uppercase', fontSize: '0.68rem', letterSpacing: 0.5 }}
+    >
+      {label}
+    </Typography>
+    <Typography variant='body2' component='div' sx={{ mt: 0.25 }}>
       {children ?? <Box component='span' sx={{ color: 'text.disabled' }}>—</Box>}
     </Typography>
   </Box>
