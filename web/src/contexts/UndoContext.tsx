@@ -3,7 +3,7 @@ import { createContext, useContext, useCallback, useState, useMemo, useEffect, u
 import { supabase } from '@/lib/supabase';
 import { queryClient } from '@/lib/react-query';
 import { closeSnackbar, enqueueSnackbar } from 'notistack';
-import { useDrawerActions } from '@/contexts/DrawerContext';
+import { useNavigate, useLocation } from 'react-router';
 
 type UndoOp =
   | { type: 'insert'; table: string; record: Record<string, unknown> }
@@ -97,18 +97,32 @@ async function executeOps(ops: UndoOp[], onPartial?: () => void): Promise<void> 
   if (skipped > 0) onPartial?.();
 }
 
+const TABLE_PATHS: Record<string, string> = { dances: '/dances', programs: '/programs' };
+
+function navigateAwayIfOnDeletedRecord(ops: UndoOp[], navigate: (path: string) => void, path: string) {
+  const deleted = ops.find(op => op.type === 'delete' && op.table in TABLE_PATHS);
+  if (!deleted || deleted.type !== 'delete') return;
+  const parentRoute = TABLE_PATHS[deleted.table];
+  if (path.startsWith(`${parentRoute}/${deleted.id}`)) {
+    navigate(parentRoute);
+  }
+}
+
 export const UndoProvider = ({ children }: { children: ReactNode }) => {
-  const { closeDrawer } = useDrawerActions();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const [undoStack, setUndoStack] = useState<UndoAction[]>([]);
   const [redoStack, setRedoStack] = useState<UndoAction[]>([]);
   const undoStackRef = useRef(undoStack);
   const redoStackRef = useRef(redoStack);
-  const closeDrawerRef = useRef(closeDrawer);
+  const navigateRef = useRef(navigate);
+  const locationRef = useRef(location);
 
   useEffect(() => { undoStackRef.current = undoStack; }, [undoStack]);
   useEffect(() => { redoStackRef.current = redoStack; }, [redoStack]);
-  useEffect(() => { closeDrawerRef.current = closeDrawer; }, [closeDrawer]);
+  useEffect(() => { navigateRef.current = navigate; }, [navigate]);
+  useEffect(() => { locationRef.current = location; }, [location]);
 
   // console.log(`Undo Stack (${undoStack.length}): ${undoStack.map(a => a.label)}`);
   // console.log(`Redo Stack (${redoStack.length}): ${redoStack.map(a => a.label)}`);
@@ -140,9 +154,7 @@ export const UndoProvider = ({ children }: { children: ReactNode }) => {
       await executeOps(undoOps, () => enqueueSnackbar('Restored with some relations missing — linked records may have been deleted.', { variant: 'warning' }));
       setUndoStack(prev => prev.slice(0, -1));
       setRedoStack(prev => [...prev, { label: action.label, ops: undoOps }]);
-      if (undoOps.some(op => op.type === 'delete' && !isDependent(op))) {
-        closeDrawerRef.current();
-      }
+      navigateAwayIfOnDeletedRecord(undoOps, navigateRef.current, locationRef.current.pathname);
     } catch (e) {
       console.error('Undo failed:', e);
     }
@@ -158,9 +170,7 @@ export const UndoProvider = ({ children }: { children: ReactNode }) => {
       await executeOps(redoOps, () => enqueueSnackbar('Restored with some relations missing — linked records may have been deleted.', { variant: 'warning' }));
       setRedoStack(prev => prev.slice(0, -1));
       setUndoStack(prev => [...prev, { label: action.label, ops: redoOps }]);
-      if (redoOps.some(op => op.type === 'delete' && !isDependent(op))) {
-        closeDrawerRef.current();
-      }
+      navigateAwayIfOnDeletedRecord(redoOps, navigateRef.current, locationRef.current.pathname);
     } catch (e) {
       console.error('Redo failed:', e);
     }

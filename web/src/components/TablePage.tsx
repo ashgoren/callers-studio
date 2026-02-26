@@ -5,11 +5,12 @@ import AddIcon from '@mui/icons-material/Add';
 import { useTable } from '@/hooks/useTable';
 import { QueryBuilderComponent } from '@/components/QueryBuilder';
 import { TableControls } from '@/components/TableControls';
-import { useDrawerActions } from '@/contexts/DrawerContext';
+import { useNavigate } from 'react-router';
 import { Spinner, ErrorMessage } from '@/components/shared';
 import { countActiveRules } from '@/components/QueryBuilder/utils';
 import type { MRT_RowData, MRT_ColumnDef, MRT_TableOptions } from 'material-react-table';
 import type { Field, RuleGroupType } from 'react-querybuilder';
+import { MODEL_PATHS } from '@/lib/types/database';
 import type { DrawerModel } from '@/lib/types/database';
 
 export const TablePage = <TData extends MRT_RowData & { id: number }>({ model, useData, columns, queryFields, defaultQuery, tableInitialState }: {
@@ -20,11 +21,10 @@ export const TablePage = <TData extends MRT_RowData & { id: number }>({ model, u
   defaultQuery: RuleGroupType;
   tableInitialState?: MRT_TableOptions<TData>['initialState'];
 }) => {
-  const { openDrawer, openDrawerForNewRecord } = useDrawerActions();
+  const navigate = useNavigate();
+  const basePath = MODEL_PATHS[model];
 
-  const onRowClick = (row: TData) => {
-    openDrawer(model, row.id);
-  };  
+  const onRowClick = (row: TData) => navigate(`${basePath}/${row.id}`);
 
   const { data, error, isLoading } = useData();
   const { table, query, setQuery } = useTable<TData>({
@@ -68,8 +68,8 @@ export const TablePage = <TData extends MRT_RowData & { id: number }>({ model, u
 
       <Tooltip title={`Add ${model}`} placement='left'>
         <Fab
-          color='primary'
-          onClick={() => openDrawerForNewRecord(model)}
+          color='secondary'
+          onClick={() => navigate(`${basePath}/new`)}
           sx={{ position: 'fixed', bottom: 32, right: 32 }}
         >
           <AddIcon />

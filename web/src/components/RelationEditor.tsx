@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Box, Typography, List, ListItem, ListItemText, IconButton, TextField, Autocomplete } from '@mui/material';
-import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
+import { Box, Chip, IconButton, Typography, TextField, Autocomplete } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
 import type { Model } from '@/lib/types/database';
 
 type RelationEditorProps<TRelation, TOption> = {
@@ -30,58 +30,71 @@ type RelationEditorProps<TRelation, TOption> = {
 export const RelationEditor = <TRelation, TOption>(props: RelationEditorProps<TRelation, TOption>) => {
   const { model, label, getOptionId, getOptionLabel, pending } = props;
   const [inputValue, setInputValue] = useState('');
+  const [showAdd, setShowAdd] = useState(false);
 
   const displayedRelations = computeDisplayedRelations(props);
   const availableOptions = computeAvailableOptions(props);
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
-      <Typography variant='caption' color='text.secondary'>
+    <Box>
+      <Typography
+        variant='caption'
+        color='text.secondary'
+        sx={{ fontWeight: 600, textTransform: 'uppercase', fontSize: '0.68rem', letterSpacing: 0.5 }}
+      >
         {label}
       </Typography>
-      <List dense>
-        {displayedRelations.map((relation) => (
-          <ListItem
-            key={relation.id}
-            sx={{
-              p: 0,
-              opacity: relation.isPending ? 0.6 : 1,
-              '&:not(:last-child)': { borderBottom: '1px solid', borderColor: 'divider' },
-            }}
-            secondaryAction={
-              <IconButton edge='end' size='small' onClick={() => pending.removeItem(relation.id)}>
-                <RemoveCircleOutlineIcon fontSize='small' />
-              </IconButton>
-            }
-          >
-            <ListItemText primary={relation.label} />
-          </ListItem>
-        ))}
-      </List>
 
-      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 1 }}>
+      {/* Chips */}
+      {displayedRelations.length > 0 && (
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+          {displayedRelations.map((relation) => (
+            <Chip
+              key={relation.id}
+              label={relation.label}
+              size='small'
+              onDelete={() => pending.removeItem(relation.id)}
+              sx={{ opacity: relation.isPending ? 0.5 : 1 }}
+            />
+          ))}
+        </Box>
+      )}
+
+      {/* Add control */}
+      {showAdd ? (
         <Autocomplete
           size='small'
-          value={null}
+          value={undefined}
           inputValue={inputValue}
           onInputChange={(_, value) => setInputValue(value)}
           onChange={(_, option) => {
             if (option) {
               pending.addItem(getOptionId(option));
               setInputValue('');
+              setShowAdd(false);
             }
           }}
+          onBlur={() => { setShowAdd(false); setInputValue(''); }}
           options={availableOptions}
           getOptionLabel={getOptionLabel}
           renderInput={(params) => (
-            <TextField {...params} placeholder={`Add ${model}...`} />
+            <TextField {...params} placeholder={`Add ${model}…`} variant='standard' autoFocus />
           )}
-          sx={{ flex: 1 }}
+          sx={{ mt: 0.5 }}
+          disableClearable
         />
-      </Box>
+      ) : (
+        <IconButton
+          size='small'
+          onClick={() => setShowAdd(true)}
+          sx={{ mt: 0.25, opacity: 0.4, '&:hover': { opacity: 1 } }}
+        >
+          <AddIcon fontSize='small' />
+        </IconButton>
+      )}
     </Box>
   );
-}
+};
 
 // existing relations + pendingAdds - pendingRemoves
 const computeDisplayedRelations = <TRelation, TOption>(props: RelationEditorProps<TRelation, TOption>) => {
@@ -89,7 +102,7 @@ const computeDisplayedRelations = <TRelation, TOption>(props: RelationEditorProp
   const withoutRemoved = relations
     .filter(r => !pending.pendingRemoves.includes(getRelationId(r)))
     .map(r => ({ id: getRelationId(r), label: getRelationLabel(r), isPending: false }));
-    
+
   const added = pending.pendingAdds.map(id => {
     const option = options.find(o => getOptionId(o) === id);
     return { id, label: option ? getOptionLabel(option) : '?', isPending: true };
@@ -105,7 +118,7 @@ const computeAvailableOptions = <TRelation, TOption>(props: RelationEditorProps<
     ...relations.map(r => getRelationId(r)).filter(id => !pending.pendingRemoves.includes(id)),
     ...pending.pendingAdds
   ]);
-  
+
   return options
     .filter(o => !linkedIds.has(getOptionId(o)))
     .sort((a, b) => getOptionLabel(a).localeCompare(getOptionLabel(b)));
