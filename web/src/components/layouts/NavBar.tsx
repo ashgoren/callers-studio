@@ -43,6 +43,9 @@ export const NavBar = () => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
+
       const mod = e.metaKey || e.ctrlKey;
       if (mod && e.key === 'z' && !e.shiftKey) {
         e.preventDefault();
@@ -101,14 +104,14 @@ export const NavBar = () => {
 
           {user && (
             <>
-              <Tooltip title={undoLabel ? `Undo: ${undoLabel}` : 'Nothing to undo'}>
+              <Tooltip title={canUndo ? `Undo: ${undoLabel}` : ''}>
                 <span>
                   <IconButton color='inherit' onClick={undo} disabled={!canUndo}>
                     <UndoIcon />
                   </IconButton>
                 </span>
               </Tooltip>
-              <Tooltip title={redoLabel ? `Redo: ${redoLabel}` : 'Nothing to redo'}>
+              <Tooltip title={canRedo ? `Redo: ${redoLabel}` : ''}>
                 <span>
                   <IconButton color='inherit' onClick={redo} disabled={!canRedo}>
                     <RedoIcon />

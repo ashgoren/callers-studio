@@ -5,6 +5,7 @@ import { Box, Button, TextField, Checkbox, FormControlLabel, Typography, Autocom
 import SaveIcon from '@mui/icons-material/Save';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useConfirm } from 'material-ui-confirm';
+import { closeSnackbar } from 'notistack';
 import { RelationEditor } from '@/components/RelationEditor';
 import { FiguresEditor } from './FiguresEditor';
 import { newRecord } from './config';
@@ -29,13 +30,19 @@ export const DanceEditMode = ({ dance, onCancel }: { dance?: Dance; onCancel?: (
   const navigate = useNavigate();
   const confirm = useConfirm();
   const { toastSuccess } = useNotify();
-  const { pushAction } = useUndoActions();
+  const { pushAction, setFormActive } = useUndoActions();
   const { setTitle } = useTitle();
 
   useEffect(
     () => setTitle(dance?.title ? `Edit: ${dance.title}` : 'New Dance'),
     [setTitle, dance?.title]
   );
+
+  useEffect(() => {
+    setFormActive(true);
+    closeSnackbar();
+    return () => setFormActive(false);
+  }, [setFormActive]);
 
   const isCreate = dance === undefined;
 
@@ -359,8 +366,8 @@ export const DanceEditMode = ({ dance, onCancel }: { dance?: Dance; onCancel?: (
           )}
         </Box>
         <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button onClick={handleCancel} disabled={isSaving} color='warning'>Cancel</Button>
-          <Button variant='contained' startIcon={<SaveIcon />} onClick={handleSave} disabled={isSaving} color='success'>
+          <Button onClick={handleCancel} disabled={isSaving} color='secondary'>Cancel</Button>
+          <Button variant='contained' startIcon={<SaveIcon />} onClick={handleSave} disabled={isSaving} color='secondary'>
             {isSaving ? 'Saving…' : isCreate ? 'Create' : 'Save'}
           </Button>
         </Box>

@@ -27,6 +27,7 @@ type UndoActions = {
   clearStacks: () => void;
   undo: () => Promise<void>;
   redo: () => Promise<void>;
+  setFormActive: (v: boolean) => void;
 };
 
 const UndoStateContext = createContext<UndoState | null>(null);
@@ -119,6 +120,8 @@ export const UndoProvider = ({ children }: { children: ReactNode }) => {
   const navigateRef = useRef(navigate);
   const locationRef = useRef(location);
 
+  const [isFormActive, setFormActive] = useState(false);
+
   useEffect(() => { undoStackRef.current = undoStack; }, [undoStack]);
   useEffect(() => { redoStackRef.current = redoStack; }, [redoStack]);
   useEffect(() => { navigateRef.current = navigate; }, [navigate]);
@@ -127,12 +130,12 @@ export const UndoProvider = ({ children }: { children: ReactNode }) => {
   // console.log(`Undo Stack (${undoStack.length}): ${undoStack.map(a => a.label)}`);
   // console.log(`Redo Stack (${redoStack.length}): ${redoStack.map(a => a.label)}`);
 
-  const state: UndoState = useMemo(() => ({
-    canUndo: undoStack.length > 0,
-    canRedo: redoStack.length > 0,
+  const state: UndoState = {
+    canUndo: !isFormActive && undoStack.length > 0,
+    canRedo: !isFormActive && redoStack.length > 0,
     undoLabel: undoStack.at(-1)?.label ?? null,
     redoLabel: redoStack.at(-1)?.label ?? null,
-  }), [undoStack, redoStack]);
+  };
 
   const pushAction = useCallback((action: UndoAction) => {
     setUndoStack(prev => [...prev, action]);
@@ -176,7 +179,7 @@ export const UndoProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const actions = useMemo(() => ({ pushAction, undo, redo, clearStacks }), [pushAction, undo, redo, clearStacks]);
+  const actions = useMemo(() => ({ pushAction, undo, redo, clearStacks, setFormActive }), [pushAction, undo, redo, clearStacks, setFormActive]);
 
   return (
     <UndoActionsContext.Provider value={actions}>
