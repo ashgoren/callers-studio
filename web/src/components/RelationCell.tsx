@@ -1,11 +1,11 @@
 import { Box } from '@mui/material';
 import { useNavigate } from 'react-router';
-import { MODEL_PATHS } from '@/lib/types/database';
-import type { DrawerModel } from '@/lib/types/database';
+import { MODEL_PATHS } from '@/lib/paths';
+import type { PrimaryModel } from '@/lib/types/database';
 
 export const RelationCell = <TRelation,>({ items, model, getId, getLabel }: {
   items: TRelation[] | null | undefined;
-  model: DrawerModel;
+  model: PrimaryModel;
   getId: (item: TRelation) => number;
   getLabel: (item: TRelation) => string;
 }) => {

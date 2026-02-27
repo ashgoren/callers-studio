@@ -172,11 +172,14 @@ supabase gen types typescript --local > src/lib/types/database_generated.ts
 
 #### 2. Custom Types — `src/lib/types/database.ts`
 
-Add the model name to `DrawerModel` (if it needs `RelationCell` clickable chips from other views) and define the types:
+Add the model name to `PrimaryModel` (if it needs `RelationCell` clickable chips from other views) and define the types. Also add the path to `MODEL_PATHS` in `src/lib/paths.ts`:
 
 ```typescript
-export type DrawerModel = 'dance' | 'program' | 'venue'; // add if needed
-export const MODEL_PATHS: Record<DrawerModel, string> = {
+// src/lib/types/database.ts
+export type PrimaryModel = 'dance' | 'program' | 'venue'; // add if needed
+
+// src/lib/paths.ts
+export const MODEL_PATHS: Record<PrimaryModel, string> = {
   dance: '/dances',
   program: '/programs',
   venue: '/venues', // add if needed
@@ -747,7 +750,8 @@ choreographerNames: sortedChoreographers.map(dc => dc.choreographer.name).join('
 | Routing + providers | `src/App.tsx` |
 | Page title sync | `src/contexts/TitleContext.tsx` |
 | Undo/redo | `src/contexts/UndoContext.tsx` |
-| Custom types + MODEL_PATHS | `src/lib/types/database.ts` |
+| Custom types | `src/lib/types/database.ts` |
+| Model route paths | `src/lib/paths.ts` |
 | Auto-generated types (don't edit) | `src/lib/types/database_generated.ts` |
 | Supabase client | `src/lib/supabase.ts` |
 | TanStack Query client | `src/lib/react-query.ts` |
@@ -813,7 +817,7 @@ choreographerNames: sortedChoreographers.map(dc => dc.choreographer.name).join('
 
 - [ ] Supabase migration created and applied
 - [ ] `supabase gen types typescript --local > src/lib/types/database_generated.ts`
-- [ ] `DrawerModel` and `MODEL_PATHS` updated in `src/lib/types/database.ts` (if `RelationCell` links needed)
+- [ ] `PrimaryModel` updated in `src/lib/types/database.ts` and `MODEL_PATHS` updated in `src/lib/paths.ts` (if `RelationCell` links needed)
 - [ ] Custom types (`*Row`, `*`, `*Insert`, `*Update`) added to `database.ts`
 - [ ] TanStack Query hooks created in `src/hooks/use{Model}s.ts` with inlined Supabase functions (list + single-record + mutations)
 - [ ] `config.tsx` created with `newRecord`, `columns`, `tableInitialState`, `queryFields`, `defaultQuery`

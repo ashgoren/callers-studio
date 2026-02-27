@@ -6,11 +6,7 @@ import type { Database } from './database_generated';
 type Tables = Database['public']['Tables'];
 
 export type Model = 'dance' | 'program' | 'choreographer' | 'key_move' | 'vibe';
-export type DrawerModel = 'dance' | 'program';
-export const MODEL_PATHS: Record<DrawerModel, string> = {
-  dance: '/dances',
-  program: '/programs',
-};
+export type PrimaryModel = 'dance' | 'program';
 
 export type DanceTypeRow = Tables['dance_types']['Row'];
 export type FormationRow = Tables['formations']['Row'];
