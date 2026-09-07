@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "supabase gen types typescript --local > ./src/lib/types/database_generated.ts && vite",
+    "dev": "supabase gen types typescript --linked > ./src/lib/types/database_generated.ts && vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",

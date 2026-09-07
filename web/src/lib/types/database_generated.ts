@@ -7,6 +7,11 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -37,19 +42,19 @@ export type Database = {
       choreographers: {
         Row: {
           created_at: string
-          id: number
+          id: string
           name: string
           user_id: string
         }
         Insert: {
           created_at?: string
-          id?: number
+          id?: string
           name: string
           user_id?: string
         }
         Update: {
           created_at?: string
-          id?: number
+          id?: string
           name?: string
           user_id?: string
         }
@@ -76,25 +81,25 @@ export type Database = {
       dance_videos: {
         Row: {
           created_at: string
-          dance_id: number
+          dance_id: string
           description: string | null
-          id: number
+          id: string
           url: string
           user_id: string
         }
         Insert: {
           created_at?: string
-          dance_id: number
+          dance_id: string
           description?: string | null
-          id?: number
+          id?: string
           url: string
           user_id?: string
         }
         Update: {
           created_at?: string
-          dance_id?: number
+          dance_id?: string
           description?: string | null
-          id?: number
+          id?: string
           url?: string
           user_id?: string
         }
@@ -117,7 +122,7 @@ export type Database = {
           difficulty: number | null
           figures: Json
           formation_id: number | null
-          id: number
+          id: string
           notes: string | null
           place_in_program: string | null
           progression_id: number | null
@@ -135,7 +140,7 @@ export type Database = {
           difficulty?: number | null
           figures?: Json
           formation_id?: number | null
-          id?: number
+          id?: string
           notes?: string | null
           place_in_program?: string | null
           progression_id?: number | null
@@ -153,7 +158,7 @@ export type Database = {
           difficulty?: number | null
           figures?: Json
           formation_id?: number | null
-          id?: number
+          id?: string
           notes?: string | null
           place_in_program?: string | null
           progression_id?: number | null
@@ -189,22 +194,22 @@ export type Database = {
       }
       dances_choreographers: {
         Row: {
-          choreographer_id: number
+          choreographer_id: string
           created_at: string
-          dance_id: number
-          id: number
+          dance_id: string
+          id: string
         }
         Insert: {
-          choreographer_id: number
+          choreographer_id: string
           created_at?: string
-          dance_id: number
-          id?: number
+          dance_id: string
+          id?: string
         }
         Update: {
-          choreographer_id?: number
+          choreographer_id?: string
           created_at?: string
-          dance_id?: number
-          id?: number
+          dance_id?: string
+          id?: string
         }
         Relationships: [
           {
@@ -226,21 +231,21 @@ export type Database = {
       dances_key_moves: {
         Row: {
           created_at: string
-          dance_id: number
-          id: number
-          key_move_id: number
+          dance_id: string
+          id: string
+          key_move_id: string
         }
         Insert: {
           created_at?: string
-          dance_id: number
-          id?: number
-          key_move_id: number
+          dance_id: string
+          id?: string
+          key_move_id: string
         }
         Update: {
           created_at?: string
-          dance_id?: number
-          id?: number
-          key_move_id?: number
+          dance_id?: string
+          id?: string
+          key_move_id?: string
         }
         Relationships: [
           {
@@ -262,21 +267,21 @@ export type Database = {
       dances_vibes: {
         Row: {
           created_at: string
-          dance_id: number
-          id: number
-          vibe_id: number
+          dance_id: string
+          id: string
+          vibe_id: string
         }
         Insert: {
           created_at?: string
-          dance_id: number
-          id?: number
-          vibe_id: number
+          dance_id: string
+          id?: string
+          vibe_id: string
         }
         Update: {
           created_at?: string
-          dance_id?: number
-          id?: number
-          vibe_id?: number
+          dance_id?: string
+          id?: string
+          vibe_id?: string
         }
         Relationships: [
           {
@@ -316,19 +321,19 @@ export type Database = {
       key_moves: {
         Row: {
           created_at: string
-          id: number
+          id: string
           name: string
           user_id: string
         }
         Insert: {
           created_at?: string
-          id?: number
+          id?: string
           name: string
           user_id?: string
         }
         Update: {
           created_at?: string
-          id?: number
+          id?: string
           name?: string
           user_id?: string
         }
@@ -338,7 +343,7 @@ export type Database = {
         Row: {
           created_at: string
           date: string | null
-          id: number
+          id: string
           location: string | null
           notes: string | null
           share_token: string
@@ -347,7 +352,7 @@ export type Database = {
         Insert: {
           created_at?: string
           date?: string | null
-          id?: number
+          id?: string
           location?: string | null
           notes?: string | null
           share_token?: string
@@ -356,7 +361,7 @@ export type Database = {
         Update: {
           created_at?: string
           date?: string | null
-          id?: number
+          id?: string
           location?: string | null
           notes?: string | null
           share_token?: string
@@ -367,24 +372,24 @@ export type Database = {
       programs_dances: {
         Row: {
           created_at: string
-          dance_id: number
-          id: number
+          dance_id: string
+          id: string
           order: number
-          program_id: number
+          program_id: string
         }
         Insert: {
           created_at?: string
-          dance_id: number
-          id?: number
+          dance_id: string
+          id?: string
           order: number
-          program_id: number
+          program_id: string
         }
         Update: {
           created_at?: string
-          dance_id?: number
-          id?: number
+          dance_id?: string
+          id?: string
           order?: number
-          program_id?: number
+          program_id?: string
         }
         Relationships: [
           {
@@ -424,19 +429,19 @@ export type Database = {
       vibes: {
         Row: {
           created_at: string
-          id: number
+          id: string
           name: string
           user_id: string
         }
         Insert: {
           created_at?: string
-          id?: number
+          id?: string
           name: string
           user_id?: string
         }
         Update: {
           created_at?: string
-          id?: number
+          id?: string
           name?: string
           user_id?: string
         }
@@ -467,12 +472,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -496,11 +501,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -521,11 +526,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -546,11 +551,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -563,11 +568,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -584,4 +589,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-
