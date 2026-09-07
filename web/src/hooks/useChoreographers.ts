@@ -18,13 +18,13 @@ const createChoreographer = async (item: ChoreographerInsert) => {
   return data as ChoreographerRow;
 };
 
-const updateChoreographer = async (id: number, updates: ChoreographerUpdate) => {
+const updateChoreographer = async (id: string, updates: ChoreographerUpdate) => {
   const { data, error } = await supabase.from('choreographers').update(updates).eq('id', id).select('*').single();
   if (error) throw new Error(error.message);
   return data as ChoreographerRow;
 };
 
-const deleteChoreographer = async (id: number) => {
+const deleteChoreographer = async (id: string) => {
   const { error } = await supabase.from('choreographers').delete().eq('id', id);
   if (error) throw new Error(error.message);
 };
@@ -47,7 +47,7 @@ export const useUpdateChoreographer = () => {
   const { toastError } = useNotify();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, updates }: { id: number; updates: ChoreographerUpdate }) =>
+    mutationFn: ({ id, updates }: { id: string; updates: ChoreographerUpdate }) =>
       updateChoreographer(id, updates),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['choreographers'] }); },
     onError: (err: Error) => toastError(err.message || 'Error updating choreographer'),
@@ -58,7 +58,7 @@ export const useDeleteChoreographer = () => {
   const { toastError } = useNotify();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id }: { id: number }) => deleteChoreographer(id),
+    mutationFn: ({ id }: { id: string }) => deleteChoreographer(id),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['choreographers'] }); },
     onError: (err: Error) => toastError(err.message || 'Error deleting choreographer'),
   });

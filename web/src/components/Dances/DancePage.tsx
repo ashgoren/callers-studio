@@ -10,12 +10,12 @@ import { DanceEditMode } from './DanceEdit';
 export const DancePage = () => {
   const { id } = useParams();
   if (id === 'new') return <DanceEditMode />;
-  return <DanceDetailPage id={Number(id!)} />;
+  return <DanceDetailPage id={id!} />;
 };
 
 // Detail page with view/edit toggle
 
-const DanceDetailPage = ({ id }: { id: number }) => {
+const DanceDetailPage = ({ id }: { id: string }) => {
   const { data: dance, isLoading, error } = useDance(id);
   const [isEditing, setIsEditing] = useState(false);
   const [figureMode, setFigureMode] = useState<'choreography' | 'calling'>('choreography');

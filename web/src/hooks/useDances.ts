@@ -11,13 +11,13 @@ const getDances = async () => {
   return data as Dance[];
 };
 
-const getDance = async (id: number) => {
+const getDance = async (id: string) => {
   const { data, error } = await supabase.from('dances').select(DANCE_SELECT).eq('id', id).single();
   if (error) throw new Error(error.message);
   return data as Dance;
 };
 
-const updateDance = async (id: number, updates: DanceUpdate) => {
+const updateDance = async (id: string, updates: DanceUpdate) => {
   const { data, error } = await supabase.from('dances').update(updates).eq('id', id).select(DANCE_SELECT).single();
   if (error) throw new Error(error.message);
   return data as Dance;
@@ -29,7 +29,7 @@ const createDance = async (newDance: DanceInsert) => {
   return data as Dance;
 };
 
-const deleteDance = async (id: number) => {
+const deleteDance = async (id: string) => {
   const { error } = await supabase.from('dances').delete().eq('id', id);
   if (error) throw new Error(error.message);
 };
@@ -43,7 +43,7 @@ export const useDances = () => {
   });
 };
 
-export const useDance = (id: number) => {
+export const useDance = (id: string) => {
   return useQuery({
     queryKey: ['dance', id],
     queryFn: () => getDance(id),
@@ -56,7 +56,7 @@ export const useUpdateDance = () => {
   const { toastError } = useNotify();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, updates }: { id: number; updates: DanceUpdate }) =>
+    mutationFn: ({ id, updates }: { id: string; updates: DanceUpdate }) =>
       updateDance(id, updates),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['dance', variables.id] });
@@ -87,7 +87,7 @@ export const useDeleteDance = () => {
   const { toastError } = useNotify();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id }: { id: number }) => deleteDance(id),
+    mutationFn: ({ id }: { id: string }) => deleteDance(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dances'] });
       queryClient.invalidateQueries({ queryKey: ['programs'] });

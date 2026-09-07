@@ -6,12 +6,12 @@ import type { Dance, DanceVideoRow } from '@/lib/types/database';
 
 export type PendingVideo = {
   tempId: string; // React key; equals String(id) for existing rows, uuid for new
-  id?: number;
+  id?: string;
   url: string;
   description: string;
 };
 
-const addDanceVideo = async (danceId: number, url: string, description: string | null) => {
+const addDanceVideo = async (danceId: string, url: string, description: string | null) => {
   const { data, error } = await supabase
     .from('dance_videos')
     .insert({ dance_id: danceId, url, description })
@@ -21,7 +21,7 @@ const addDanceVideo = async (danceId: number, url: string, description: string |
   return data;
 };
 
-const removeDanceVideo = async (id: number) => {
+const removeDanceVideo = async (id: string) => {
   const { data, error } = await supabase
     .from('dance_videos')
     .delete()
@@ -32,7 +32,7 @@ const removeDanceVideo = async (id: number) => {
   return data;
 };
 
-const updateDanceVideo = async (id: number, url: string, description: string | null) => {
+const updateDanceVideo = async (id: string, url: string, description: string | null) => {
   const { data, error } = await supabase
     .from('dance_videos')
     .update({ url, description })
@@ -46,11 +46,11 @@ const updateDanceVideo = async (id: number, url: string, description: string | n
 export const commitVideoChanges = async (
   initialVideos: PendingVideo[],
   pendingVideos: PendingVideo[],
-  danceId: number,
+  danceId: string,
   fns: {
-    addVideo: (args: { danceId: number; url: string; description: string | null }) => Promise<DanceVideoRow>;
-    removeVideo: (args: { id: number; danceId: number }) => Promise<unknown>;
-    updateVideo: (args: { id: number; danceId: number; url: string; description: string | null }) => Promise<unknown>;
+    addVideo: (args: { danceId: string; url: string; description: string | null }) => Promise<DanceVideoRow>;
+    removeVideo: (args: { id: string; danceId: string }) => Promise<unknown>;
+    updateVideo: (args: { id: string; danceId: string; url: string; description: string | null }) => Promise<unknown>;
   }
 ) => {
   const validVideos = pendingVideos.filter(v => v.url.trim());
@@ -76,7 +76,7 @@ export const usePendingVideos = (dance?: Dance) => {
   );
   const [pendingVideos, setPendingVideos] = useState<PendingVideo[]>(initialVideos);
 
-  const commitChanges = (danceId: number, fns: Parameters<typeof commitVideoChanges>[3]) =>
+  const commitChanges = (danceId: string, fns: Parameters<typeof commitVideoChanges>[3]) =>
     commitVideoChanges(initialVideos, pendingVideos, danceId, fns);
 
   return {
@@ -91,7 +91,7 @@ export const useAddDanceVideo = () => {
   const { toastError } = useNotify();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ danceId, url, description }: { danceId: number; url: string; description: string | null }) =>
+    mutationFn: ({ danceId, url, description }: { danceId: string; url: string; description: string | null }) =>
       addDanceVideo(danceId, url, description),
     onSuccess: (_, { danceId }) => {
       queryClient.invalidateQueries({ queryKey: ['dance', danceId] });
@@ -105,7 +105,7 @@ export const useRemoveDanceVideo = () => {
   const { toastError } = useNotify();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id }: { id: number; danceId: number }) =>
+    mutationFn: ({ id }: { id: string; danceId: string }) =>
       removeDanceVideo(id),
     onSuccess: (_, { danceId }) => {
       queryClient.invalidateQueries({ queryKey: ['dance', danceId] });
@@ -119,7 +119,7 @@ export const useUpdateDanceVideo = () => {
   const { toastError } = useNotify();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, url, description }: { id: number; danceId: number; url: string; description: string | null }) =>
+    mutationFn: ({ id, url, description }: { id: string; danceId: string; url: string; description: string | null }) =>
       updateDanceVideo(id, url, description),
     onSuccess: (_, { danceId }) => {
       queryClient.invalidateQueries({ queryKey: ['dance', danceId] });

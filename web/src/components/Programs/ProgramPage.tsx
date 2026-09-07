@@ -12,14 +12,14 @@ import { ProgramChoreographyView } from './ProgramChoreographyView';
 export const ProgramPage = () => {
   const { id } = useParams();
   if (id === 'new') return <ProgramEditMode />;
-  return <ProgramDetailPage id={Number(id!)} />;
+  return <ProgramDetailPage id={id!} />;
 };
 
 // Detail page with view/edit/choreography toggle
 
 type Mode = 'view' | 'edit' | 'choreography';
 
-const ProgramDetailPage = ({ id }: { id: number }) => {
+const ProgramDetailPage = ({ id }: { id: string }) => {
   const { data: program, isLoading, error } = useProgram(id);
   const [mode, setMode] = useState<Mode>('view');
   const { isExecuting } = useUndoState();

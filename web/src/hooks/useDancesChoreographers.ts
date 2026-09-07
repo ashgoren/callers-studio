@@ -2,7 +2,7 @@ import { useNotify } from '@/hooks/useNotify';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 
-const addChoreographerToDance = async (danceId: number, choreographerId: number) => {
+const addChoreographerToDance = async (danceId: string, choreographerId: string) => {
   const { data, error } = await supabase
     .from('dances_choreographers')
     .insert({ dance_id: danceId, choreographer_id: choreographerId })
@@ -12,7 +12,7 @@ const addChoreographerToDance = async (danceId: number, choreographerId: number)
   return data;
 };
 
-const removeChoreographerFromDance = async (danceId: number, choreographerId: number) => {
+const removeChoreographerFromDance = async (danceId: string, choreographerId: string) => {
   const { data, error } = await supabase
     .from('dances_choreographers')
     .delete()
@@ -29,7 +29,7 @@ export const useAddChoreographerToDance = () => {
   const { toastError } = useNotify();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ danceId, choreographerId }: { danceId: number; choreographerId: number }) =>
+    mutationFn: ({ danceId, choreographerId }: { danceId: string; choreographerId: string }) =>
       addChoreographerToDance(danceId, choreographerId),
     onSuccess: (_, { danceId }) => {
       queryClient.invalidateQueries({ queryKey: ['dance', danceId] });
@@ -44,7 +44,7 @@ export const useRemoveChoreographerFromDance = () => {
   const { toastError } = useNotify();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ danceId, choreographerId }: { danceId: number; choreographerId: number }) =>
+    mutationFn: ({ danceId, choreographerId }: { danceId: string; choreographerId: string }) =>
       removeChoreographerFromDance(danceId, choreographerId),
     onSuccess: (_, { danceId }) => {
       queryClient.invalidateQueries({ queryKey: ['dance', danceId] });

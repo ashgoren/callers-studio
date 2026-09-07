@@ -12,14 +12,14 @@ type Props = {
   orderedDances: DisplayDance[];
   allDances: Dance[];
   onAdd: (dance: Dance) => void;
-  onRemove: (danceId: number) => void;
+  onRemove: (danceId: string) => void;
   onReorder: (newDances: DisplayDance[]) => void;
 };
 
 const SortableDanceItem = ({ dance, index, onRemove }: {
   dance: DisplayDance;
   index: number;
-  onRemove: (danceId: number) => void;
+  onRemove: (danceId: string) => void;
 }) => {
   const handleRef = useRef(null);
   const { ref } = useSortable({ id: String(dance.danceId), index, handle: handleRef });

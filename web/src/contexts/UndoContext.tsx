@@ -8,8 +8,8 @@ import type { ReactNode, RefObject, Dispatch, SetStateAction } from 'react';
 
 type UndoOp =
   | { type: 'insert'; table: string; record: Record<string, unknown> }
-  | { type: 'update'; table: string; id: number; before: Record<string, unknown>; after: Record<string, unknown> }
-  | { type: 'delete'; table: string; id: number; record: Record<string, unknown> };
+  | { type: 'update'; table: string; id: string; before: Record<string, unknown>; after: Record<string, unknown> }
+  | { type: 'delete'; table: string; id: string; record: Record<string, unknown> };
 
 export type UndoAction = {
   label: string;
@@ -39,7 +39,7 @@ function invertOps(ops: UndoOp[]): UndoOp[] {
   return ops.map(op => {
     switch (op.type) {
       case 'insert':
-        return { type: 'delete', table: op.table, id: (op.record as { id: number }).id, record: op.record };
+        return { type: 'delete', table: op.table, id: (op.record as { id: string }).id, record: op.record };
       case 'delete':
         return { type: 'insert', table: op.table, record: op.record };
       case 'update':
@@ -234,7 +234,7 @@ export function beforeValues<T extends object>(
 export function relationOps(
   table: string,
   added: Record<string, unknown>[],
-  removed: ({ id: number } & Record<string, unknown>)[]
+  removed: ({ id: string } & Record<string, unknown>)[]
 ): UndoOp[] {
   return [
     ...added.map((record): UndoOp => ({ type: 'insert', table, record })),

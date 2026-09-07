@@ -6,20 +6,20 @@ import type { Model } from '@/lib/types/database';
 type RelationEditorProps<TRelation, TOption> = {
   // Existing relations
   relations: TRelation[];                               // join table rows with related items embedded
-  getRelationId: (relation: TRelation) => number;       // for key + remove
+  getRelationId: (relation: TRelation) => string;       // for key + remove
   getRelationLabel: (relation: TRelation) => string;    // display in list of current related items
 
   // Available options to add
   options: TOption[];                                   // available items to add (full objects of related model)
-  getOptionId: (option: TOption) => number;             // for add
+  getOptionId: (option: TOption) => string;             // for add
   getOptionLabel: (option: TOption) => string;          // display in autocomplete of available items to add
 
   // Pending changes management (ids of related items pending add/remove, and functions to update those)
   pending: {
-    pendingAdds: number[];                              // relation ids pending add (not yet in relations)
-    pendingRemoves: number[];                           // relation ids pending remove (not yet removed from relations)
-    addItem: (id: number) => void;                      // add relation id to pendingAdds (and remove from pendingRemoves if present)
-    removeItem: (id: number) => void;                   // add relation id to pendingRemoves (and remove from pendingAdds if present)
+    pendingAdds: string[];                              // relation ids pending add (not yet in relations)
+    pendingRemoves: string[];                           // relation ids pending remove (not yet removed from relations)
+    addItem: (id: string) => void;                      // add relation id to pendingAdds (and remove from pendingRemoves if present)
+    removeItem: (id: string) => void;                   // add relation id to pendingRemoves (and remove from pendingAdds if present)
   };
 
   // Display

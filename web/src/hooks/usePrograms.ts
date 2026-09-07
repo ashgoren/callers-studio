@@ -14,13 +14,13 @@ const getPrograms = async () => {
   return data as Program[];
 };
 
-const getProgram = async (id: number) => {
+const getProgram = async (id: string) => {
   const { data, error } = await supabase.from('programs').select(PROGRAM_SELECT).eq('id', id).order('order', { referencedTable: 'programs_dances', ascending: true }).single();
   if (error) throw new Error(error.message);
   return data as Program;
 };
 
-const updateProgram = async (id: number, updates: ProgramUpdate) => {
+const updateProgram = async (id: string, updates: ProgramUpdate) => {
   const { data, error } = await supabase.from('programs').update(updates).eq('id', id).select(PROGRAM_SELECT).order('order', { referencedTable: 'programs_dances', ascending: true }).single();
   if (error) throw new Error(error.message);
   return data as Program;
@@ -32,7 +32,7 @@ const createProgram = async (newProgram: ProgramInsert) => {
   return data as Program;
 };
 
-const deleteProgram = async (id: number) => {
+const deleteProgram = async (id: string) => {
   const { error } = await supabase.from('programs').delete().eq('id', id);
   if (error) throw new Error(error.message);
 };
@@ -46,7 +46,7 @@ export const usePrograms = () => {
   })
 };
 
-export const useProgram = (id: number) => {
+export const useProgram = (id: string) => {
   return useQuery({
     queryKey: ['program', id],
     queryFn: () => getProgram(id),
@@ -59,7 +59,7 @@ export const useUpdateProgram = () => {
   const { toastError } = useNotify();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, updates }: { id: number; updates: ProgramUpdate }) =>
+    mutationFn: ({ id, updates }: { id: string; updates: ProgramUpdate }) =>
       updateProgram(id, updates),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['program', variables.id] });
@@ -87,7 +87,7 @@ export const useDeleteProgram = () => {
   const { toastError } = useNotify();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id }: { id: number }) => deleteProgram(id),
+    mutationFn: ({ id }: { id: string }) => deleteProgram(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['programs'] });
       queryClient.invalidateQueries({ queryKey: ['dances'] });

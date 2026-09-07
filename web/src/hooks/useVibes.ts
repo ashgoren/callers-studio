@@ -18,13 +18,13 @@ const createVibe = async (item: VibeInsert) => {
   return data as VibeRow;
 };
 
-const updateVibe = async (id: number, updates: VibeUpdate) => {
+const updateVibe = async (id: string, updates: VibeUpdate) => {
   const { data, error } = await supabase.from('vibes').update(updates).eq('id', id).select('*').single();
   if (error) throw new Error(error.message);
   return data as VibeRow;
 };
 
-const deleteVibe = async (id: number) => {
+const deleteVibe = async (id: string) => {
   const { error } = await supabase.from('vibes').delete().eq('id', id);
   if (error) throw new Error(error.message);
 };
@@ -47,7 +47,7 @@ export const useUpdateVibe = () => {
   const { toastError } = useNotify();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, updates }: { id: number; updates: VibeUpdate }) =>
+    mutationFn: ({ id, updates }: { id: string; updates: VibeUpdate }) =>
       updateVibe(id, updates),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['vibes'] }); },
     onError: (err: Error) => toastError(err.message || 'Error updating vibe'),
@@ -58,7 +58,7 @@ export const useDeleteVibe = () => {
   const { toastError } = useNotify();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id }: { id: number }) => deleteVibe(id),
+    mutationFn: ({ id }: { id: string }) => deleteVibe(id),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['vibes'] }); },
     onError: (err: Error) => toastError(err.message || 'Error deleting vibe'),
   });

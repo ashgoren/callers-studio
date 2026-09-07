@@ -31,10 +31,10 @@ export type Dance = Omit<DanceRow, 'figures' | 'cues' | 'calling_figures'> & {
   figures: FigureItem[];
   calling_figures: FigureItem[] | null;
   cues: CueGridData | null;
-  programs_dances: { id: number; order: number; program: ProgramRow }[];
-  dances_choreographers: { id: number; choreographer: ChoreographerRow }[];
-  dances_key_moves: { id: number; key_move: KeyMoveRow }[];
-  dances_vibes: { id: number; vibe: VibeRow }[];
+  programs_dances: { id: string; order: number; program: ProgramRow }[];
+  dances_choreographers: { id: string; choreographer: ChoreographerRow }[];
+  dances_key_moves: { id: string; key_move: KeyMoveRow }[];
+  dances_vibes: { id: string; vibe: VibeRow }[];
   dance_videos: DanceVideoRow[];
   dance_type: DanceTypeRow | null;
   formation: FormationRow | null;
@@ -48,11 +48,11 @@ export type ProgramDance = Omit<DanceRow, 'figures'> & {
   dance_type: DanceTypeRow | null;
   formation: FormationRow | null;
   progression: ProgressionRow | null;
-  dances_key_moves: { id: number; key_move: KeyMoveRow }[];
+  dances_key_moves: { id: string; key_move: KeyMoveRow }[];
 };
 
 export type ProgramRow = Tables['programs']['Row'];
-export type Program = ProgramRow & { programs_dances: { id: number; order: number; dance: ProgramDance }[] };
+export type Program = ProgramRow & { programs_dances: { id: string; order: number; dance: ProgramDance }[] };
 export type ProgramInsert = Tables['programs']['Insert'];
 export type ProgramUpdate = Tables['programs']['Update'];
 
@@ -82,16 +82,16 @@ export type SharedProgram = {
 };
 
 export type ChoreographerRow = Tables['choreographers']['Row'];
-export type Choreographer = ChoreographerRow & { dances_choreographers: { id: number }[] };
+export type Choreographer = ChoreographerRow & { dances_choreographers: { id: string }[] };
 export type ChoreographerInsert = Tables['choreographers']['Insert'];
 export type ChoreographerUpdate = Tables['choreographers']['Update'];
 
 export type KeyMoveRow = Tables['key_moves']['Row'];
-export type KeyMove = KeyMoveRow & { dances_key_moves: { id: number }[] };
+export type KeyMove = KeyMoveRow & { dances_key_moves: { id: string }[] };
 export type KeyMoveInsert = Tables['key_moves']['Insert'];
 export type KeyMoveUpdate = Tables['key_moves']['Update'];
 
 export type VibeRow = Tables['vibes']['Row'];
-export type Vibe = VibeRow & { dances_vibes: { id: number }[] };
+export type Vibe = VibeRow & { dances_vibes: { id: string }[] };
 export type VibeInsert = Tables['vibes']['Insert'];
 export type VibeUpdate = Tables['vibes']['Update'];

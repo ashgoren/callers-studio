@@ -2,7 +2,7 @@ import { useNotify } from '@/hooks/useNotify';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 
-const addVibeToDance = async (danceId: number, vibeId: number) => {
+const addVibeToDance = async (danceId: string, vibeId: string) => {
   const { data, error } = await supabase
     .from('dances_vibes')
     .insert({ dance_id: danceId, vibe_id: vibeId })
@@ -12,7 +12,7 @@ const addVibeToDance = async (danceId: number, vibeId: number) => {
   return data;
 };
 
-const removeVibeFromDance = async (danceId: number, vibeId: number) => {
+const removeVibeFromDance = async (danceId: string, vibeId: string) => {
   const { data, error } = await supabase
     .from('dances_vibes')
     .delete()
@@ -29,7 +29,7 @@ export const useAddVibeToDance = () => {
   const { toastError } = useNotify();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ danceId, vibeId }: { danceId: number; vibeId: number }) =>
+    mutationFn: ({ danceId, vibeId }: { danceId: string; vibeId: string }) =>
       addVibeToDance(danceId, vibeId),
     onSuccess: (_, { danceId }) => {
       queryClient.invalidateQueries({ queryKey: ['dance', danceId] });
@@ -44,7 +44,7 @@ export const useRemoveVibeFromDance = () => {
   const { toastError } = useNotify();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ danceId, vibeId }: { danceId: number; vibeId: number }) =>
+    mutationFn: ({ danceId, vibeId }: { danceId: string; vibeId: string }) =>
       removeVibeFromDance(danceId, vibeId),
     onSuccess: (_, { danceId }) => {
       queryClient.invalidateQueries({ queryKey: ['dance', danceId] });

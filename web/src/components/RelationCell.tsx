@@ -6,7 +6,7 @@ import type { PrimaryModel } from '@/lib/types/database';
 export const RelationCell = <TRelation,>({ items, model, getId, getLabel, getSearchParams }: {
   items: TRelation[] | null | undefined;
   model: PrimaryModel;
-  getId: (item: TRelation) => number;
+  getId: (item: TRelation) => string;
   getLabel: (item: TRelation) => string;
   getSearchParams?: (item: TRelation) => string;
 }) => {

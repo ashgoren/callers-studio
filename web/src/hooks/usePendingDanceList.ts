@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Program, Dance } from '@/lib/types/database';
 
-export type DisplayDance = { danceId: number; title: string };
+export type DisplayDance = { danceId: string; title: string };
 
 export const usePendingDanceList = (initialProgramDances: Program['programs_dances']) => {
   const [dances, setDances] = useState<DisplayDance[]>(() =>
@@ -10,7 +10,7 @@ export const usePendingDanceList = (initialProgramDances: Program['programs_danc
   const addDance = (dance: Dance) =>
     setDances(prev => [...prev, { danceId: dance.id, title: dance.title }]);
 
-  const removeDance = (danceId: number) =>
+  const removeDance = (danceId: string) =>
     setDances(prev => prev.filter(d => d.danceId !== danceId));
 
   const reorder = (newDances: DisplayDance[]) => setDances(newDances);
@@ -20,8 +20,8 @@ export const usePendingDanceList = (initialProgramDances: Program['programs_danc
     dances.some((d, i) => d.danceId !== initialProgramDances[i].dance.id);
 
   const commitChanges = async <TResult>(
-    onAdd: (danceId: number, order: number) => Promise<TResult>,
-    onRemove: (danceId: number) => Promise<TResult>,
+    onAdd: (danceId: string, order: number) => Promise<TResult>,
+    onRemove: (danceId: string) => Promise<TResult>,
   ): Promise<{ added: TResult[]; removed: TResult[] }> => {
     const removed = await Promise.all(initialProgramDances.map(pd => onRemove(pd.dance.id)));
     const added = await Promise.all(dances.map((d, i) => onAdd(d.danceId, i + 1)));

@@ -28,7 +28,7 @@ import type { CueGridData, Dance } from '@/lib/types/database';
 export const DanceViewMode = ({ dance, onEdit, figureMode, onFigureModeChange }: { dance: Dance; onEdit: () => void; figureMode: 'choreography' | 'calling'; onFigureModeChange: (mode: 'choreography' | 'calling') => void }) => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const programId = Number(searchParams.get('program')) || 0;
+  const programId = searchParams.get('program') || '';
   const { data: program } = useProgram(programId);
   const { mutateAsync: updateDance } = useUpdateDance();
   const { pushAction } = useUndoActions();
@@ -82,7 +82,7 @@ export const DanceViewMode = ({ dance, onEdit, figureMode, onFigureModeChange }:
   const nextDance = program && nextProgramDance
     ? { title: nextProgramDance.dance.title, onClick: () => navigate(`/dances/${nextProgramDance.dance.id}?program=${program.id}&openWalkthrough=1`) }
     : null;
-  const goToProgramDance = (programDance: { dance: { id: number } }) => navigate(`/dances/${programDance.dance.id}?program=${program!.id}`);
+  const goToProgramDance = (programDance: { dance: { id: string } }) => navigate(`/dances/${programDance.dance.id}?program=${program!.id}`);
 
   return (
     <Box sx={{ maxWidth: 900, mx: 'auto' }}>

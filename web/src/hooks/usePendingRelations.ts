@@ -1,12 +1,12 @@
 import { useState } from 'react';
 
-export const usePendingRelations = <TAdd = number>(
-  options?: { getId?: (item: TAdd) => number }
+export const usePendingRelations = <TAdd = string>(
+  options?: { getId?: (item: TAdd) => string }
 ) => {
   const [pendingAdds, setPendingAdds] = useState<TAdd[]>([]);
-  const [pendingRemoves, setPendingRemoves] = useState<number[]>([]);
+  const [pendingRemoves, setPendingRemoves] = useState<string[]>([]);
 
-  const getId = options?.getId ?? (item => item as number);
+  const getId = options?.getId ?? (item => item as string);
 
   const addItem = (item: TAdd) => {
     if (pendingRemoves.includes(getId(item))) {
@@ -16,7 +16,7 @@ export const usePendingRelations = <TAdd = number>(
     }
   };
 
-  const removeItem = (id: number) => {
+  const removeItem = (id: string) => {
     if (pendingAdds.some(item => getId(item) === id)) {
       setPendingAdds(prev => prev.filter(item => getId(item) !== id));
     } else {
@@ -26,7 +26,7 @@ export const usePendingRelations = <TAdd = number>(
 
   const commitChanges = async <TResult>(
     onCommitAdd: (item: TAdd) => Promise<TResult>,
-    onCommitRemove: (id: number) => Promise<TResult>
+    onCommitRemove: (id: string) => Promise<TResult>
   ) => {
     const [added, removed] = await Promise.all([
       Promise.all(pendingAdds.map(item => onCommitAdd(item))),

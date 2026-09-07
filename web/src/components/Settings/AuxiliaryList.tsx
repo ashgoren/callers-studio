@@ -9,7 +9,7 @@ import AddIcon from '@mui/icons-material/Add';
 import { Spinner, ErrorMessage } from '@/components/shared';
 import { useTitle } from '@/contexts/TitleContext';
 
-interface AuxiliaryListProps<T extends { id: number; name: string }> {
+interface AuxiliaryListProps<T extends { id: string; name: string }> {
   title: string;
   singularLabel: string;
   data: T[] | undefined;
@@ -17,19 +17,19 @@ interface AuxiliaryListProps<T extends { id: number; name: string }> {
   error: Error | null;
   isSaving: boolean;
   onCreate: (name: string) => Promise<unknown>;
-  onUpdate: (id: number, name: string) => Promise<unknown>;
-  onDelete: (id: number) => Promise<unknown>;
+  onUpdate: (id: string, name: string) => Promise<unknown>;
+  onDelete: (id: string) => Promise<unknown>;
   getLinkedCount: (item: T) => number;
 }
 
-export const AuxiliaryList = <T extends { id: number; name: string }>({
+export const AuxiliaryList = <T extends { id: string; name: string }>({
   title, singularLabel, data, isLoading, error, isSaving, onCreate, onUpdate, onDelete, getLinkedCount
 }: AuxiliaryListProps<T>) => {
   const { setTitle } = useTitle();
   useEffect(() => setTitle(title), [setTitle, title]);
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [editingId, setEditingId] = useState<number | 'new' | null>(null);
+  const [editingId, setEditingId] = useState<string | 'new' | null>(null);
   const [editValue, setEditValue] = useState('');
 
   if (isLoading) return <Spinner />;
@@ -39,7 +39,7 @@ export const AuxiliaryList = <T extends { id: number; name: string }>({
     item.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleEdit = (id: number, name: string) => {
+  const handleEdit = (id: string, name: string) => {
     setEditingId(id);
     setEditValue(name);
   };
@@ -65,7 +65,7 @@ export const AuxiliaryList = <T extends { id: number; name: string }>({
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     try {
       await onDelete(id);
     } catch {

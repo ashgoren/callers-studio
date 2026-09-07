@@ -18,13 +18,13 @@ const createKeyMove = async (item: KeyMoveInsert) => {
   return data as KeyMoveRow;
 };
 
-const updateKeyMove = async (id: number, updates: KeyMoveUpdate) => {
+const updateKeyMove = async (id: string, updates: KeyMoveUpdate) => {
   const { data, error } = await supabase.from('key_moves').update(updates).eq('id', id).select('*').single();
   if (error) throw new Error(error.message);
   return data as KeyMoveRow;
 };
 
-const deleteKeyMove = async (id: number) => {
+const deleteKeyMove = async (id: string) => {
   const { error } = await supabase.from('key_moves').delete().eq('id', id);
   if (error) throw new Error(error.message);
 };
@@ -47,7 +47,7 @@ export const useUpdateKeyMove = () => {
   const { toastError } = useNotify();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, updates }: { id: number; updates: KeyMoveUpdate }) =>
+    mutationFn: ({ id, updates }: { id: string; updates: KeyMoveUpdate }) =>
       updateKeyMove(id, updates),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['key_moves'] }); },
     onError: (err: Error) => toastError(err.message || 'Error updating key move'),
@@ -58,7 +58,7 @@ export const useDeleteKeyMove = () => {
   const { toastError } = useNotify();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id }: { id: number }) => deleteKeyMove(id),
+    mutationFn: ({ id }: { id: string }) => deleteKeyMove(id),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['key_moves'] }); },
     onError: (err: Error) => toastError(err.message || 'Error deleting key move'),
   });

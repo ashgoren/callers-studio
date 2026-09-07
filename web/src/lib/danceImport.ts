@@ -3,20 +3,20 @@ import { parseDance } from '@/lib/callersBox';
 import type { CallersBoxData } from '@/lib/types/callers-box';
 import type { FigureItem } from '@/lib/types/database';
 
-type LookupItem = { id: number; name: string };
+type LookupItem<TId = number> = { id: TId; name: string };
 
 export type ImportResult = {
   title: string;
   formation_id: number | null;
   progression_id: number | null;
-  choreographerIds: number[];
+  choreographerIds: string[];
   figures: FigureItem[];
 };
 
 export const fetchAndResolveImport = async (
   url: string,
-  lookups: { formations: LookupItem[]; progressions: LookupItem[]; choreographers: LookupItem[] },
-  createChoreographer: (name: string) => Promise<{ id: number }>
+  lookups: { formations: LookupItem[]; progressions: LookupItem[]; choreographers: LookupItem<string>[] },
+  createChoreographer: (name: string) => Promise<{ id: string }>
 ): Promise<ImportResult> => {
   const { data, error } = await supabase.functions.invoke('callers-box', { body: { url } });
   if (error) {
@@ -28,7 +28,7 @@ export const fetchAndResolveImport = async (
 
   const parsed = parseDance(data as CallersBoxData);
 
-  const choreographerIds: number[] = [];
+  const choreographerIds: string[] = [];
   for (const name of parsed.choreographers) {
     const existing = lookups.choreographers.find(c => c.name.toLowerCase() === name.toLowerCase());
     if (existing) {
